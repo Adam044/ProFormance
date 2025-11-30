@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const { Pool } = require('pg');
 const crypto = require('crypto');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config({ path: __dirname + '/.env' });
 
 // Enable global keep-alive to avoid socket disconnects
@@ -17,8 +18,21 @@ const PORT = process.env.PORT || 3003;
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '..', 'Frontend', 'views')));
-app.use('/images', express.static(path.join(__dirname, '..', 'images')));
+function resolveProjectPaths() {
+    const root = path.resolve(__dirname, '..');
+    const altRoot = path.resolve(root, 'src');
+    const views1 = path.join(root, 'Frontend', 'views');
+    const views2 = path.join(altRoot, 'Frontend', 'views');
+    const images1 = path.join(root, 'images');
+    const images2 = path.join(altRoot, 'images');
+    const viewsDir = fs.existsSync(path.join(views1, 'index.html')) ? views1 : (fs.existsSync(path.join(views2, 'index.html')) ? views2 : views1);
+    const imagesDir = fs.existsSync(images1) ? images1 : (fs.existsSync(images2) ? images2 : images1);
+    return { viewsDir, imagesDir };
+}
+const { viewsDir: VIEWS_DIR, imagesDir: IMAGES_DIR } = resolveProjectPaths();
+
+app.use(express.static(VIEWS_DIR));
+app.use('/images', express.static(IMAGES_DIR));
 
 // --- DATABASE CONNECTION ---
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -310,16 +324,16 @@ function requireAdminForWrite(req, res, next) {
 
 // Static routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'Frontend', 'views', 'index.html'));
+    res.sendFile(path.join(VIEWS_DIR, 'index.html'));
 });
 app.get('/user', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'Frontend', 'views', 'user_dashboard.html'));
+    res.sendFile(path.join(VIEWS_DIR, 'user_dashboard.html'));
 });
 app.get('/violet', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'Frontend', 'views', 'violet_dashboard.html'));
+    res.sendFile(path.join(VIEWS_DIR, 'violet_dashboard.html'));
 });
 app.get('/patient', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'Frontend', 'views', 'patient.html'));
+    res.sendFile(path.join(VIEWS_DIR, 'patient.html'));
 });
 
 // Boot the server
