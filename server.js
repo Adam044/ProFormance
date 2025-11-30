@@ -19,14 +19,22 @@ const PORT = process.env.PORT || 3003;
 app.use(cors({ origin: true, credentials: true }));
 app.use(bodyParser.json());
 function resolveProjectPaths() {
-    const root = path.resolve(__dirname, '..');
-    const altRoot = path.resolve(root, 'src');
-    const views1 = path.join(root, 'Frontend', 'views');
-    const views2 = path.join(altRoot, 'Frontend', 'views');
-    const images1 = path.join(root, 'images');
-    const images2 = path.join(altRoot, 'images');
-    const viewsDir = fs.existsSync(path.join(views1, 'index.html')) ? views1 : (fs.existsSync(path.join(views2, 'index.html')) ? views2 : views1);
-    const imagesDir = fs.existsSync(images1) ? images1 : (fs.existsSync(images2) ? images2 : images1);
+    const candidatesViews = [
+        path.join(process.cwd(), 'Frontend', 'views'),
+        path.join(process.cwd(), '..', 'Frontend', 'views'),
+        path.join(__dirname, '..', 'Frontend', 'views'),
+        path.join(__dirname, '..', '..', 'Frontend', 'views')
+    ];
+    const candidatesImages = [
+        path.join(process.cwd(), 'images'),
+        path.join(process.cwd(), '..', 'images'),
+        path.join(__dirname, '..', 'images'),
+        path.join(__dirname, '..', '..', 'images')
+    ];
+    let viewsDir = candidatesViews.find(p => fs.existsSync(path.join(p, 'index.html')));
+    let imagesDir = candidatesImages.find(p => fs.existsSync(p));
+    if (!viewsDir) viewsDir = candidatesViews[0];
+    if (!imagesDir) imagesDir = candidatesImages[0];
     return { viewsDir, imagesDir };
 }
 const { viewsDir: VIEWS_DIR, imagesDir: IMAGES_DIR } = resolveProjectPaths();
@@ -324,7 +332,9 @@ function requireAdminForWrite(req, res, next) {
 
 // Static routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(VIEWS_DIR, 'index.html'));
+    const p = path.join(VIEWS_DIR, 'index.html');
+    if (!fs.existsSync(p)) return res.status(404).send('Not Found');
+    res.sendFile(p);
 });
 app.get('/user', (req, res) => {
     res.sendFile(path.join(VIEWS_DIR, 'user_dashboard.html'));
