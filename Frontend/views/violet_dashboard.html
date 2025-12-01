@@ -338,7 +338,7 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3003/api';
+        const API_URL = localStorage.getItem('vb_api') || `${location.origin}/api`;
         let clients = [];
         let payments = [];
         let clientModeFilter = 'all';

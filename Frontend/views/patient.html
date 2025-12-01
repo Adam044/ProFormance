@@ -407,7 +407,7 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3003/api';
+        const API_URL = localStorage.getItem('vb_api') || `${location.origin}/api`;
         let selectedClient = null;
         const user = JSON.parse(localStorage.getItem('vb_user'));
         if (!user || user.role !== 'admin') window.location.href = 'auth.html';
