@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Member Access | Violette Banda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --c-maroon: #7a2747;
+            --c-olive: #7a8a41;
+            --c-dark: #1a1a1a;
+        }
+        body { 
+            font-family: 'Manrope', sans-serif; 
+            background-color: #fdfdfd;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1, h2, h3, .display-font { font-family: 'Oswald', sans-serif; letter-spacing: -0.02em; }
+
+        /* --- Textures & Gradients --- */
+        .noise-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 50; opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        
+        .elite-gradient {
+            background: radial-gradient(circle at top right, rgba(122,138,65,0.15), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(122,39,71,0.1), transparent 40%);
+        }
+
+        /* --- Shapes --- */
+        .clip-angle-br { clip-path: polygon(0 0, 100% 0, 100% 85%, 92% 100%, 0 100%); }
+    </style>
+</head>
+<body class="bg-slate-50 elite-gradient flex items-center justify-center min-h-screen p-6 relative">
+
+    <div class="noise-bg"></div>
+
+    <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-[#7a8a41] opacity-10 rounded-full blur-[80px] -z-10 animate-pulse"></div>
+    <div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#7a2747] opacity-10 rounded-full blur-[80px] -z-10"></div>
+
+    <div class="bg-white/80 backdrop-blur-xl w-full max-w-md p-8 md:p-12 rounded-3xl shadow-2xl border border-white/50 relative overflow-hidden z-10">
+        
+        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#7a8a41] to-[#7a2747]"></div>
+
+        <div class="text-center mb-10">
+            <img src="/images/violet-logo.png" alt="ProFormance" class="mx-auto mb-6 h-12 w-auto object-contain">
+            
+            <h2 class="text-4xl font-bold text-slate-900 display-font uppercase tracking-tight">Member Access</h2>
+            <p class="text-slate-500 mt-2 text-sm font-medium tracking-wide uppercase">Track your recovery. View your stats.</p>
+        </div>
+
+        <form id="loginForm" class="space-y-5">
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <i data-lucide="mail" class="w-5 h-5"></i>
+                    </div>
+                    <input type="email" id="email" required placeholder="name@example.com" class="w-full pl-12 pr-4 py-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-[#7a2747] focus:border-[#7a2747] focus:bg-white focus:outline-none transition-all placeholder:font-normal">
+                </div>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Password</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <i data-lucide="lock" class="w-5 h-5"></i>
+                    </div>
+                    <input type="password" id="password" required placeholder="••••••••" class="w-full pl-12 pr-4 py-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-semibold focus:ring-2 focus:ring-[#7a2747] focus:border-[#7a2747] focus:bg-white focus:outline-none transition-all placeholder:font-normal">
+                </div>
+            </div>
+            
+            <div class="pt-4">
+                <button type="submit" class="w-full py-4 bg-[#7a2747] text-white rounded-lg clip-angle-br font-bold display-font text-xl uppercase tracking-wider hover:bg-slate-900 transition-all shadow-lg shadow-[#7a2747]/20 flex justify-center items-center gap-2 group">
+                    <span>Secure Login</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </div>
+        </form>
+        
+        <div class="mt-8 text-center">
+            <a href="index.html" class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-[#7a2747] font-semibold transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Return to Home
+            </a>
+        </div>
+    </div>
+
+    <div class="absolute bottom-6 text-[10px] text-slate-400 font-medium tracking-widest uppercase opacity-60">
+        ProFormance System v2.0
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const API_URL = 'http://localhost:3003/api';
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerHTML;
+
+            // Loading State
+            btn.innerHTML = '<span class="animate-pulse">VERIFYING...</span>';
+            btn.disabled = true;
+            btn.classList.add('opacity-80', 'cursor-not-allowed');
+
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await res.json();
+
+                if (data.success) {
+                    localStorage.setItem('vb_user', JSON.stringify(data.user));
+                    localStorage.setItem('vb_token', data.token);
+                    
+                    // Success Animation visual cue
+                    btn.innerHTML = 'ACCESS GRANTED';
+                    btn.classList.remove('bg-[#7a2747]');
+                    btn.classList.add('bg-[#7a8a41]'); // Switch to Green on success
+
+                    setTimeout(() => {
+                        if (data.user.role === 'admin') {
+                            window.location.href = 'violet_dashboard.html';
+                        } else {
+                            window.location.href = 'user_dashboard.html';
+                        }
+                    }, 800);
+                } else {
+                    alert(data.message || 'Login failed');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-80', 'cursor-not-allowed');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Connection Error. Ensure backend is running.');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-80', 'cursor-not-allowed');
+            }
+        });
+    </script>
+</body>
+</html>

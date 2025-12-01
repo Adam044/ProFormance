@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Patient File | Violette Banda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --c-maroon: #7a2747;
+            --c-olive: #7a8a41;
+            --c-dark: #1a1a1a;
+        }
+        body { 
+            font-family: 'Manrope', sans-serif; 
+            background-color: #f8f9fa;
+            overflow-x: hidden; 
+        }
+        h1, h2, h3, .display-font { font-family: 'Oswald', sans-serif; letter-spacing: -0.02em; }
+
+        .bg-maroon { background-color: var(--c-maroon); }
+        .text-maroon { color: var(--c-maroon); }
+        .border-maroon { border-color: var(--c-maroon); }
+        .bg-olive { background-color: var(--c-olive); }
+        .text-olive { color: var(--c-olive); }
+
+        /* Inputs */
+        .input-pro {
+            width: 100%; padding: 0.75rem; background-color: #f8fafc;
+            border: 1px solid #e2e8f0; border-radius: 0.75rem;
+            outline: none; transition: all 0.2s; font-weight: 600; color: #1e293b; font-size: 0.9rem;
+        }
+        .input-pro:focus {
+            border-color: var(--c-maroon); background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(122, 39, 71, 0.1);
+        }
+
+        /* SVG Body Map - EXACTLY like User Dashboard */
+        .body-part { 
+            fill: #e2e8f0; 
+            stroke: #e2e8f0; /* Solid stroke matches fill */
+            transition: all 0.3s ease; 
+            cursor: pointer; 
+        }
+        .body-part:hover { 
+            fill: #a78bfa; 
+            stroke: #a78bfa;
+            filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.5)); 
+        }
+        .body-part.active-high { 
+            fill: #ef4444; 
+            stroke: #ef4444; 
+            filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.4)); 
+        }
+        .body-part.active-low { 
+            fill: #fbbf24; 
+            stroke: #fbbf24; 
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        .animate-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col text-slate-800">
+
+    <nav class="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 flex justify-between items-center px-4 md:px-6 shrink-0 z-40">
+        <div class="flex items-center gap-4">
+            <a href="violet_dashboard.html" class="p-2 -ml-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <div class="h-6 w-px bg-slate-200 hidden md:block"></div>
+            <div>
+                <h1 class="font-bold text-slate-900 leading-tight uppercase display-font text-lg tracking-wide">
+                    <span id="top-name">Loading...</span>
+                </h1>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden md:block">Clinical File</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div id="system-status" class="hidden md:flex items-center gap-2 px-3 py-1 bg-olive/10 border border-olive/20 rounded-full text-[10px] font-bold text-olive uppercase">
+                <div id="system-status-dot" class="w-1.5 h-1.5 rounded-full bg-olive animate-pulse"></div>
+                <span id="system-status-text">Synced</span>
+            </div>
+            <button onclick="logout()" class="p-2 text-slate-400 hover:text-maroon transition-colors bg-slate-50 rounded-lg">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </nav>
+
+    <main class="flex-grow flex flex-col md:flex-row overflow-hidden relative">
+        
+        <section class="w-full md:w-5/12 bg-white border-r border-slate-200 h-full overflow-y-auto p-6 flex flex-col relative z-10">
+            
+            <div class="mb-6 pb-6 border-b border-slate-100">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold text-xl display-font uppercase" id="p-initials">--</div>
+                        <div>
+                            <h1 id="p-name" class="text-2xl font-bold text-slate-900 display-font uppercase tracking-wide">Patient Name</h1>
+                            <div class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                                <span id="p-bio">—</span>
+                                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span id="p-contact">—</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="openInfoModal()" class="p-2 rounded-lg bg-slate-50 hover:bg-maroon hover:text-white transition-colors text-slate-400 shadow-sm border border-slate-100">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="bg-slate-900 text-white px-3 py-1 rounded-md font-mono font-bold text-xs tracking-widest" id="p-code">CODE</div>
+                    
+                    <div class="flex items-center gap-2 ml-auto">
+                        <span id="active-label" class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="active-switch" class="sr-only peer">
+                            <div class="w-11 h-6 bg-red-500 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bg-red-50 text-red-900 p-3 rounded-xl text-sm font-bold border border-red-100 flex gap-3 items-start shadow-sm">
+                    <i data-lucide="alert-circle" class="w-5 h-5 shrink-0 text-red-500"></i>
+                    <div>
+                        <span class="block text-[10px] uppercase tracking-widest text-red-400 mb-0.5">Primary Complaint</span>
+                        <span id="p-issue">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-grow flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-900 text-sm uppercase tracking-wide display-font">Clinical Map</h3>
+                    
+                    <div class="flex items-center gap-2">
+                        <select id="bodymap-session" onchange="changeBodyMapScope(this.value)" class="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-maroon font-bold text-slate-600 max-w-[140px]"></select>
+                         <button onclick="startSession()" class="text-xs font-bold bg-maroon text-white hover:bg-slate-900 px-3 py-2 rounded-lg shadow-md transition-colors flex items-center gap-1">
+                            <i data-lucide="play" class="w-3 h-3 fill-current"></i> Start
+                        </button>
+                     </div>
+                </div>
+                
+                <div class="relative flex-grow flex items-center justify-center bg-[#f8f9fa] rounded-2xl border border-slate-200 p-6 shadow-inner min-h-[450px]">
+                    <div id="svg-container" class="h-[400px] w-full flex justify-center drop-shadow-xl"></div>
+                    
+                    <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]"></span> Injury</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Monitor</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="w-full md:w-7/12 bg-slate-50 h-full overflow-y-auto flex flex-col relative z-0">
+            
+            <div class="bg-white border-b border-slate-200 px-6 py-6 grid grid-cols-2 md:grid-cols-4 gap-4 shrink-0 shadow-sm">
+                <div class="p-4 rounded-2xl border border-slate-100 bg-slate-50/50">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold mb-1 tracking-wider">Total Sessions</div>
+                    <p id="card-total-sessions" class="text-2xl font-bold text-slate-900 display-font">0</p>
+                </div>
+                <div class="p-4 rounded-2xl border border-slate-100 bg-slate-50/50">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold mb-1 tracking-wider">Active Zones</div>
+                    <p id="card-active-zones" class="text-2xl font-bold text-slate-900 display-font">0</p>
+                </div>
+                <div class="p-4 rounded-2xl border border-slate-100 bg-slate-50/50">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold mb-1 tracking-wider">Last Visit</div>
+                    <p id="card-last-session" class="text-sm font-bold text-slate-700 truncate mt-1">—</p>
+                </div>
+                <div class="p-4 rounded-2xl border border-slate-100 bg-slate-50/50">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold mb-1 tracking-wider">Next In</div>
+                    <p id="card-days-next" class="text-2xl font-bold text-slate-900 display-font">—</p>
+                </div>
+            </div>
+
+            <div class="bg-white px-6 py-4 border-b border-slate-200 shrink-0 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                 <div>
+                    <p class="text-[10px] font-bold text-olive uppercase tracking-widest mb-0.5">Next Appointment</p>
+                    <div id="next-session-ui" class="text-sm font-bold text-slate-800">Not Scheduled</div>
+                </div>
+                
+                <form onsubmit="handleSchedule(event)" class="w-full md:w-auto flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                    <input id="schedule-date" type="datetime-local" name="date" class="flex-grow md:flex-grow-0 text-xs p-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-slate-600 focus:border-maroon transition-colors">
+                    <div class="flex items-center gap-2 px-2 border-l border-slate-200">
+                         <input type="checkbox" id="no-appointment" class="rounded border-slate-300 text-maroon focus:ring-maroon w-4 h-4" title="Clear Appointment">
+                    </div>
+                    <button class="bg-slate-900 text-white p-2 rounded-lg hover:bg-maroon transition-colors shadow-sm">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div class="p-6 bg-[#f8f9fa]">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-slate-900 display-font uppercase">Treatment Log</h2>
+                    <button onclick="openSessionModal()" class="flex items-center gap-2 text-white text-xs font-bold bg-maroon hover:bg-slate-900 px-4 py-2 rounded-lg transition-all shadow-lg shadow-maroon/20 uppercase tracking-wide">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Log Session
+                    </button>
+                </div>
+                
+                <div id="session-list" class="space-y-4">
+                    </div>
+                
+                <div class="h-12 md:h-0"></div> </div>
+        </section>
+    </main>
+
+    <div id="bodymap-modal" onclick="if(event.target===this) closeModal('bodymap-modal')" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 border-t-8 border-maroon max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Edit Region</p>
+                    <h3 class="text-2xl font-bold text-slate-900 display-font uppercase" id="map-region-title">Region</h3>
+                </div>
+                <button onclick="closeModal('bodymap-modal')" class="p-2 bg-slate-50 rounded-full hover:bg-slate-100"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button>
+            </div>
+
+            <form onsubmit="handleUpdateMap(event)" class="space-y-4">
+                <input type="hidden" id="map-region-id">
+                
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Specific Structure</label>
+                    <select id="map-specific" class="input-pro"></select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Injury Date</label>
+                        <input id="map-injury-date" type="date" class="input-pro">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Mechanism</label>
+                        <select id="map-mechanism" class="input-pro">
+                            <option value="direct_blow">Direct Blow</option>
+                            <option value="overuse">Overuse</option>
+                            <option value="strain">Strain</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1">Pain Level (VAS)</label>
+                        <span id="map-vas-val" class="text-xs font-bold text-maroon bg-maroon/10 px-2 py-0.5 rounded">0</span>
+                    </div>
+                    <input id="map-vas" type="range" min="0" max="10" value="0" class="w-full accent-maroon h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Condition</label>
+                        <select id="map-severity-select" class="input-pro">
+                            <option value="acute">Acute / High</option>
+                            <option value="subacute">Monitor / Low</option>
+                        </select>
+                    </div>
+                    <div>
+                         <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Pain Type</label>
+                         <select id="map-pain-type" class="input-pro">
+                            <option value="radicular">Radicular</option>
+                            <option value="sharp">Sharp</option>
+                            <option value="dull">Dull/Ache</option>
+                            <option value="other">Other</option>
+                         </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Clinical Findings</label>
+                    <textarea id="map-note" rows="3" class="input-pro resize-none" placeholder="Assessment notes..."></textarea>
+                </div>
+
+                <input id="map-symptoms" type="hidden">
+                <input id="map-pain-other" type="hidden">
+                <input id="map-pattern" type="hidden">
+                <input id="map-aggravating" type="hidden">
+                <input id="map-easing" type="hidden">
+
+                <div class="flex justify-between items-center pt-4 border-t border-slate-100 mt-2">
+                    <button type="button" onclick="handleClearMap()" class="text-red-400 text-xs font-bold hover:text-red-600 uppercase tracking-wide">Clear Data</button>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeModal('bodymap-modal')" class="px-4 py-2 text-slate-400 hover:text-slate-600 font-bold text-sm">Cancel</button>
+                        <button class="px-6 py-2 bg-maroon text-white rounded-xl font-bold hover:bg-slate-900 transition-colors text-sm shadow-lg shadow-maroon/20">Update Map</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="session-modal" onclick="if(event.target===this) closeModal('session-modal')" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 md:p-8 max-h-[90vh] overflow-y-auto border border-white/50">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                <h3 class="text-2xl font-bold text-slate-900 display-font uppercase" id="session-modal-title">Log Session</h3>
+                <button onclick="closeModal('session-modal')" class="p-2 bg-slate-50 rounded-full hover:bg-slate-100"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button>
+            </div>
+            
+            <form onsubmit="handleSessionSubmit(event)" class="space-y-5">
+                <input type="hidden" name="sessionId" id="session-id">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Title</label>
+                        <input name="title" id="session-title" placeholder="e.g. Manual Therapy & Rehab" required class="input-pro">
+                    </div>
+                    <div class="col-span-2">
+                         <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Date & Time</label>
+                        <input name="date" id="session-date" type="datetime-local" required class="input-pro">
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 grid grid-cols-2 gap-4">
+                     <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 border-b border-slate-200 pb-1">Finance</div>
+                     
+                     <div>
+                        <label class="text-xs font-bold text-slate-500 mb-1 block">Status</label>
+                        <div class="flex gap-2">
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="paymentStatus" value="paid" class="peer hidden">
+                                <div class="p-2 text-center rounded-lg bg-white border border-slate-200 text-slate-400 peer-checked:bg-green-500 peer-checked:text-white peer-checked:border-green-500 transition-all font-bold text-xs">Paid</div>
+                            </label>
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="paymentStatus" value="on_hold" class="peer hidden">
+                                <div class="p-2 text-center rounded-lg bg-white border border-slate-200 text-slate-400 peer-checked:bg-amber-400 peer-checked:text-white peer-checked:border-amber-400 transition-all font-bold text-xs">Hold</div>
+                            </label>
+                        </div>
+                     </div>
+                     <div>
+                        <label class="text-xs font-bold text-slate-500 mb-1 block">Type</label>
+                        <select name="paymentType" id="session-payment-type" class="input-pro py-1.5 text-xs">
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                        </select>
+                     </div>
+                     <div class="col-span-2 flex gap-3">
+                         <select name="currency" id="session-currency" class="input-pro w-20 py-2">
+                            <option value="$">$</option>
+                            <option value="ILS">ILS</option>
+                        </select>
+                        <input name="amount" id="session-amount" type="number" min="0" step="0.01" placeholder="Amount" class="input-pro py-2">
+                     </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1">Patient Progress</label>
+                        <span id="session-progress-val" class="text-xs font-bold text-olive bg-olive/10 px-2 py-0.5 rounded">0%</span>
+                    </div>
+                    <input name="progress" id="session-progress" type="range" min="0" max="100" value="0" class="w-full accent-olive h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+                
+                <div>
+                     <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Notes</label>
+                     <textarea name="note" id="session-note" rows="3" class="input-pro resize-none" placeholder="Treatment details..."></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeModal('session-modal')" class="px-6 py-3 text-slate-500 font-bold hover:bg-slate-100 rounded-xl transition-colors">Discard</button>
+                    <button class="px-8 py-3 bg-maroon text-white rounded-xl font-bold hover:bg-slate-900 transition-colors shadow-lg shadow-maroon/20 uppercase tracking-wide display-font">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="info-modal" onclick="if(event.target===this) closeModal('info-modal')" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-xl p-6 md:p-8 max-h-[85vh] overflow-y-auto border border-white/50">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-slate-900 display-font uppercase">Patient Profile</h3>
+                <button onclick="closeModal('info-modal')" class="p-2 bg-slate-50 rounded-full hover:bg-slate-100"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button>
+            </div>
+            <div id="info-content" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3003/api';
+        let selectedClient = null;
+        const user = JSON.parse(localStorage.getItem('vb_user'));
+        if (!user || user.role !== 'admin') window.location.href = 'auth.html';
+
+        window.onload = async () => {
+            await ensureToken();
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (!id) { window.location.href = 'violet_dashboard.html'; return; }
+            fetchClient(id);
+            lucide.createIcons();
+            
+            const input = document.getElementById('schedule-date');
+            const cb = document.getElementById('no-appointment');
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            if (input) input.min = now.toISOString().slice(0,16);
+            if (cb) {
+                cb.addEventListener('change', updateScheduleUI);
+                updateScheduleUI();
+            }
+            scheduleTokenRefresh();
+        };
+
+        function logout() {
+            localStorage.removeItem('vb_user');
+            window.location.href = 'index.html';
+        }
+
+        async function fetchClient(id) {
+            try {
+                const tok = localStorage.getItem('vb_token');
+                let res = await fetch(`${API_URL}/clients/${id}`, { headers: { Authorization: tok ? `Bearer ${tok}` : '' } });
+                if (res.status === 401) {
+                    await ensureToken();
+                    const t2 = localStorage.getItem('vb_token');
+                    res = await fetch(`${API_URL}/clients/${id}`, { headers: { Authorization: t2 ? `Bearer ${t2}` : '' } });
+                }
+                if (!res.ok) { window.location.href = 'violet_dashboard.html'; return; }
+                selectedClient = await res.json();
+                renderClientDetails();
+            } catch (e) {
+                window.location.href = 'violet_dashboard.html';
+            }
+        }
+
+        // Helper to format Date of Birth as DD/MM/YYYY
+        function formatDOB(dateString) {
+            if (!dateString) return '—';
+            const d = new Date(dateString);
+            return d.toLocaleDateString('en-GB'); // en-GB uses dd/mm/yyyy
+        }
+
+        function renderClientDetails() {
+            const c = selectedClient;
+            document.getElementById('top-name').innerText = c.name;
+            document.getElementById('p-name').innerText = c.name;
+            document.getElementById('p-initials').innerText = c.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+            document.getElementById('p-code').innerText = c.accessCode;
+            
+            // Active Switch logic
+            const label = document.getElementById('active-label');
+            const sw = document.getElementById('active-switch');
+            const isActive = typeof c.active === 'undefined' ? true : !!c.active;
+            if (label) {
+                label.innerText = isActive ? 'Active' : 'Inactive';
+                // Color handled by CSS peer-checked on parent input
+            }
+            if (sw) { sw.checked = isActive; sw.onchange = () => toggleActive(); }
+            
+            // Header Bio
+            document.getElementById('p-bio').innerText = `${c.gender || 'Athlete'}, ${formatDOB(c.dob)}`;
+            document.getElementById('p-contact').innerText = c.phone;
+            document.getElementById('p-issue').innerText = c.primaryIssue || 'No active complaint';
+
+            // Next Session Header
+            const nsUi = document.getElementById('next-session-ui');
+            const now = new Date();
+            if (c.nextSession && new Date(c.nextSession) > now) {
+                const d = new Date(c.nextSession);
+                nsUi.innerHTML = `<span class="text-maroon font-bold">${d.toLocaleDateString(undefined, {weekday:'short', day:'numeric', month:'short'})} @ ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>`;
+            } else {
+                nsUi.innerText = 'Not Scheduled';
+            }
+
+            // Body Map Selector
+            const filterSel = document.getElementById('bodymap-session');
+            const sessions = (c.history || []).filter(h => h.type === 'session');
+            if (filterSel) {
+                if (!sessions.length) {
+                    filterSel.innerHTML = '<option value="" disabled selected>No Sessions</option>';
+                    filterSel.disabled = true;
+                    window.bodyMapScope = null;
+                } else {
+                    const options = sessions.map(s => `<option value="${s.id}">${new Date(s.date).toLocaleDateString()} • ${s.title}</option>`).join('');
+                    filterSel.innerHTML = options;
+                    if (!window.bodyMapScope) { window.bodyMapScope = sessions[0].id; }
+                    filterSel.disabled = false;
+                    filterSel.value = window.bodyMapScope;
+                }
+            }
+            renderBodyMap();
+
+            // Stats
+            const totalSessions = sessions.length;
+            const activeZones = Object.values(c.bodyMap || {}).filter(x => x && (x.severity || x.note)).length;
+            const last = sessions.slice().sort((a,b)=> new Date(b.date) - new Date(a.date))[0];
+            const daysToNext = c.nextSession ? Math.max(0, Math.ceil((new Date(c.nextSession) - new Date())/ (1000*60*60*24))) : '—';
+            
+            document.getElementById('card-total-sessions').innerText = totalSessions;
+            document.getElementById('card-active-zones').innerText = activeZones;
+            document.getElementById('card-last-session').innerText = last ? new Date(last.date).toLocaleDateString(undefined, {month:'short', day:'numeric'}) : '—';
+            document.getElementById('card-days-next').innerText = daysToNext;
+
+            // Session List
+            document.getElementById('session-list').innerHTML = (c.history || []).map(h => `
+                <div class="relative pl-6 border-l-2 border-slate-200 pb-8 last:pb-0 group">
+                    <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-2 ${h.type === 'admin' ? 'border-slate-300' : 'border-maroon'} shadow-sm"></div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm group-hover:shadow-md transition-shadow relative">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-lg">${h.title}</h4>
+                                <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">${new Date(h.date).toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'})} • ${new Date(h.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                            </div>
+                            ${h.type === 'session' ? `
+                            <div class="flex gap-2">
+                                <button onclick="editSession('${h.id}')" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-maroon"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                                <button onclick="deleteSession('${h.id}')" class="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500"><i data-lucide="trash" class="w-4 h-4"></i></button>
+                            </div>` : ''}
+                        </div>
+                        
+                        <p class="text-sm text-slate-600 leading-relaxed mb-4 font-medium">${h.note || 'No notes.'}</p>
+                        
+                        ${h.type === 'session' ? `
+                        <div class="flex flex-wrap items-center gap-2 mb-4">
+                            <span class="text-[10px] uppercase font-bold px-2 py-1 rounded-md ${h.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}">${h.paymentStatus === 'on_hold' ? 'On Hold' : 'Paid'}</span>
+                            <span class="text-[11px] font-bold px-2 py-1 rounded-md bg-slate-100 text-slate-700 border border-slate-200">${h.amount ? h.amount : 0} ${h.currency || '$'}</span>
+                            <span class="text-[10px] uppercase font-bold px-2 py-1 rounded-md bg-slate-50 text-slate-500 border border-slate-100">${h.paymentType === 'bank_transfer' ? 'Bank' : 'Cash'}</span>
+                        </div>
+                        
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Progress</span>
+                                <span class="text-xs font-bold text-olive">${typeof h.progress !== 'undefined' ? h.progress : 0}%</span>
+                            </div>
+                            <div class="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                <div class="h-full bg-olive rounded-full" style="width: ${typeof h.progress !== 'undefined' ? h.progress : 0}%;"></div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // --- BODY MAP LOGIC ---
+        const BODY_REGIONS = {
+            'head': ['Cervical Spine', 'Head', 'TMJ'],
+            'torso': ['Thoracic Spine', 'Ribcage', 'Abdominals', 'Lumbar Spine', 'SI Joint'],
+            'hips': ['Hips', 'Glutes', 'Groin'],
+            'left-arm': ['Shoulder (L)', 'Elbow (L)', 'Wrist (L)', 'Hand (L)'],
+            'right-arm': ['Shoulder (R)', 'Elbow (R)', 'Wrist (R)', 'Hand (R)'],
+            'left-leg': ['Quad (L)', 'Hamstring (L)', 'Knee (L)', 'Calf (L)', 'Ankle (L)'],
+            'right-leg': ['Quad (R)', 'Hamstring (R)', 'Knee (R)', 'Calf (R)', 'Ankle (R)']
+        };
+
+        function getCurrentBodyMap() {
+            const scope = window.bodyMapScope;
+            if (!scope) return {};
+            const s = (selectedClient.history || []).find(h => h.id === scope);
+            return (s && s.bodyMap) ? s.bodyMap : {};
+        }
+
+        function renderBodyMap() {
+            document.getElementById('svg-container').innerHTML = getAbstractSVG(getCurrentBodyMap());
+        }
+
+        function changeBodyMapScope(val) {
+            window.bodyMapScope = val || null;
+            renderBodyMap();
+        }
+
+        // --- RESTORED: Matches User Dashboard Exactly ---
+        function getAbstractSVG(data) {
+            const c = (id) => {
+                if (!data || !data[id]) return 'body-part';
+                const sev = data[id].severity;
+                if (sev === 'high' || sev === 'acute') return 'body-part active-high';
+                if (sev === 'low' || sev === 'subacute') return 'body-part active-low';
+                return 'body-part';
+            };
+            // Same geometric paths as User Dashboard
+            return `
+            <svg viewBox="0 0 200 400" class="h-full drop-shadow-xl">
+                <circle cx="100" cy="40" r="25" class="${c('head')}" onclick="openMapModal('head', 'Head & Neck')" />
+                <path d="M70,75 L130,75 L120,180 L80,180 Z" class="${c('torso')}" onclick="openMapModal('torso', 'Torso & Spine')" />
+                <path d="M65,80 L30,150" stroke-width="18" class="${c('left-arm')}" onclick="openMapModal('left-arm', 'Left Arm')" />
+                <path d="M135,80 L170,150" stroke-width="18" class="${c('right-arm')}" onclick="openMapModal('right-arm', 'Right Arm')" />
+                <path d="M75,185 L125,185 L125,210 L75,210 Z" class="${c('hips')}" onclick="openMapModal('hips', 'Hips & Pelvis')" />
+                <path d="M85,215 L80,350" stroke-width="20" class="${c('left-leg')}" onclick="openMapModal('left-leg', 'Left Leg')" />
+                <path d="M115,215 L120,350" stroke-width="20" class="${c('right-leg')}" onclick="openMapModal('right-leg', 'Right Leg')" />
+            </svg>`;
+        }
+
+        function openMapModal(regionId, regionName) {
+            const modal = document.getElementById('bodymap-modal');
+            if (!window.bodyMapScope) { alert('Start a session to edit body map.'); return; }
+            document.getElementById('map-region-title').innerText = regionName;
+            document.getElementById('map-region-id').value = regionId;
+            const select = document.getElementById('map-specific');
+            select.innerHTML = BODY_REGIONS[regionId].map(part => `<option>${part}</option>`).join('');
+            
+            const existing = getCurrentBodyMap()[regionId];
+            if (existing) {
+                select.value = existing.specificPart || BODY_REGIONS[regionId][0];
+                document.getElementById('map-note').value = existing.note || '';
+                // Map 'high'/'low' from read-only to 'acute'/'subacute' for editing
+                const sev = existing.severity === 'high' ? 'acute' : (existing.severity === 'low' ? 'subacute' : existing.severity);
+                document.getElementById('map-severity-select').value = sev || 'acute';
+                document.getElementById('map-injury-date').value = existing.injuryDate || '';
+                document.getElementById('map-mechanism').value = existing.mechanism || 'direct_blow';
+                document.getElementById('map-vas').value = typeof existing.vas !== 'undefined' ? existing.vas : 0;
+                document.getElementById('map-vas-val').innerText = document.getElementById('map-vas').value;
+                document.getElementById('map-pain-type').value = existing.painType || 'radicular';
+            } else {
+                document.getElementById('map-note').value = '';
+                document.getElementById('map-severity-select').value = 'acute';
+                document.getElementById('map-injury-date').value = '';
+                document.getElementById('map-vas').value = 0;
+                document.getElementById('map-vas-val').innerText = '0';
+            }
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        async function handleUpdateMap(e) {
+            e.preventDefault();
+            const region = document.getElementById('map-region-id').value;
+            const specificPart = document.getElementById('map-specific').value;
+            const note = document.getElementById('map-note').value;
+            const severity = document.getElementById('map-severity-select').value;
+            const injuryDate = document.getElementById('map-injury-date').value || null;
+            const mechanism = document.getElementById('map-mechanism').value || null;
+            const vas = Number(document.getElementById('map-vas').value || 0);
+            const painType = document.getElementById('map-pain-type').value || null;
+            
+            const scope = window.bodyMapScope;
+            const url = `${API_URL}/clients/${selectedClient.id}/sessions/${scope}/bodymap`;
+            const tok = localStorage.getItem('vb_token');
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: tok ? `Bearer ${tok}` : '' },
+                body: JSON.stringify({ region, note, severity, specificPart, injuryDate, mechanism, vas, painType })
+            });
+            closeModal('bodymap-modal');
+            fetchClient(selectedClient.id);
+        }
+
+        async function handleClearMap() {
+            const region = document.getElementById('map-region-id').value;
+            const scope = window.bodyMapScope;
+            const url = `${API_URL}/clients/${selectedClient.id}/sessions/${scope}/bodymap`;
+            const tok = localStorage.getItem('vb_token');
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: tok ? `Bearer ${tok}` : '' },
+                body: JSON.stringify({ region, clear: true })
+            });
+            closeModal('bodymap-modal');
+            fetchClient(selectedClient.id);
+        }
+
+        // --- SESSION LOGIC ---
+        async function startSession() {
+            try {
+                await ensureToken();
+                const tok = localStorage.getItem('vb_token');
+                const res = await fetch(`${API_URL}/clients/${selectedClient.id}/sessions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: tok ? `Bearer ${tok}` : '' },
+                    body: JSON.stringify({
+                        title: 'New Session',
+                        date: new Date().toISOString(),
+                        progress: 0,
+                        paymentStatus: 'on_hold',
+                        currency: '$',
+                        paymentType: 'cash'
+                    })
+                });
+                if (!res.ok) { alert('Could not start session'); return; }
+                const session = await res.json();
+                window.bodyMapScope = session.id;
+                fetchClient(selectedClient.id);
+            } catch (e) { alert('Error starting session'); }
+        }
+
+        function openSessionModal(sessionId = null) {
+            const modal = document.getElementById('session-modal');
+            const form = modal.querySelector('form');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            if (sessionId) {
+                const session = selectedClient.history.find(h => h.id === sessionId);
+                document.getElementById('session-modal-title').innerText = 'Edit Session';
+                document.getElementById('session-id').value = sessionId;
+                document.getElementById('session-title').value = session.title;
+                document.getElementById('session-note').value = session.note;
+                const d = new Date(session.date);
+                d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                document.getElementById('session-date').value = d.toISOString().slice(0,16);
+                document.getElementById('session-progress').value = typeof session.progress !== 'undefined' ? session.progress : 0;
+                document.getElementById('session-progress-val').innerText = `${document.getElementById('session-progress').value}%`;
+                const ps = session.paymentStatus || 'on_hold';
+                const radio = document.querySelector(`input[name='paymentStatus'][value='${ps}']`);
+                if (radio) radio.checked = true;
+                document.getElementById('session-currency').value = session.currency || '$';
+                document.getElementById('session-payment-type').value = session.paymentType || 'cash';
+                document.getElementById('session-amount').value = typeof session.amount !== 'undefined' ? session.amount : '';
+            } else {
+                document.getElementById('session-modal-title').innerText = 'New Session';
+                document.getElementById('session-id').value = '';
+                form.reset();
+                document.getElementById('session-progress').value = 0;
+                document.getElementById('session-progress-val').innerText = '0%';
+                const radio = document.querySelector(`input[name='paymentStatus'][value='on_hold']`);
+                if (radio) radio.checked = true;
+                document.getElementById('session-date').value = new Date().toISOString().slice(0,16);
+            }
+        }
+
+        function editSession(id) { openSessionModal(id); }
+
+        async function handleSessionSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('session-id').value;
+            const data = Object.fromEntries(new FormData(e.target));
+            if (data.progress) data.progress = Number(data.progress);
+            if (data.amount) data.amount = Number(data.amount);
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_URL}/clients/${selectedClient.id}/sessions/${id}` : `${API_URL}/clients/${selectedClient.id}/sessions`;
+            const tok = localStorage.getItem('vb_token');
+            await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json', Authorization: tok ? `Bearer ${tok}` : '' },
+                body: JSON.stringify(data)
+            });
+            closeModal('session-modal');
+            fetchClient(selectedClient.id);
+        }
+
+        async function deleteSession(id) {
+            if (!confirm('Delete this session record?')) return;
+            const tok = localStorage.getItem('vb_token');
+            await fetch(`${API_URL}/clients/${selectedClient.id}/sessions/${id}`, { method: 'DELETE', headers: { Authorization: tok ? `Bearer ${tok}` : '' } });
+            fetchClient(selectedClient.id);
+        }
+
+        // --- UTILS & SCHEDULE ---
+        async function handleSchedule(e) {
+            e.preventDefault();
+            const cb = document.getElementById('no-appointment');
+            const input = document.getElementById('schedule-date');
+            if (cb && cb.checked) {
+                const tok = localStorage.getItem('vb_token');
+                await fetch(`${API_URL}/clients/${selectedClient.id}/schedule`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: tok ? `Bearer ${tok}` : '' },
+                    body: JSON.stringify({ date: null })
+                });
+                fetchClient(selectedClient.id);
+                return;
+            }
+            const date = input.value;
+            if (!date) return;
+            const tok = localStorage.getItem('vb_token');
+            await fetch(`${API_URL}/clients/${selectedClient.id}/schedule`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: tok ? `Bearer ${tok}` : '' },
+                body: JSON.stringify({ date })
+            });
+            fetchClient(selectedClient.id);
+        }
+
+        function updateScheduleUI() {
+            const cb = document.getElementById('no-appointment');
+            const input = document.getElementById('schedule-date');
+            if (cb && input) { input.disabled = cb.checked; input.classList.toggle('opacity-50', cb.checked); }
+        }
+
+        async function toggleActive() {
+            const isActive = typeof selectedClient.active === 'undefined' ? true : !!selectedClient.active;
+            const tok = localStorage.getItem('vb_token');
+            await fetch(`${API_URL}/clients/${selectedClient.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: tok ? `Bearer ${tok}` : '' },
+                body: JSON.stringify({ active: !isActive })
+            });
+            fetchClient(selectedClient.id);
+        }
+
+        function openInfoModal() {
+            const c = selectedClient;
+            const html = `
+                <div class="space-y-4">
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <div class="text-[10px] uppercase font-bold text-slate-400 mb-2">Personal</div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><span class="text-xs text-slate-500 block">DOB</span><span class="font-bold text-sm">${formatDOB(c.dob)}</span></div>
+                            <div><span class="text-xs text-slate-500 block">Gender</span><span class="font-bold text-sm">${c.gender || '—'}</span></div>
+                            <div><span class="text-xs text-slate-500 block">Phone</span><span class="font-bold text-sm">${c.phone || '—'}</span></div>
+                            <div><span class="text-xs text-slate-500 block">Email</span><span class="font-bold text-sm truncate">${c.email || '—'}</span></div>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                         <div class="text-[10px] uppercase font-bold text-slate-400 mb-2">Lifestyle</div>
+                         <div class="grid grid-cols-2 gap-4">
+                            <div><span class="text-xs text-slate-500 block">Occupation</span><span class="font-bold text-sm">${c.occupation || '—'}</span></div>
+                            <div><span class="text-xs text-slate-500 block">Medication</span><span class="font-bold text-sm">${c.medication === 'yes' ? 'Yes' : 'No'}</span></div>
+                            ${c.medicationNote ? `<div class="col-span-2 text-xs italic text-slate-600 bg-white p-2 rounded border border-slate-100">${c.medicationNote}</div>` : ''}
+                         </div>
+                    </div>
+                     <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                         <div class="text-[10px] uppercase font-bold text-slate-400 mb-2">Athletic Data</div>
+                         <div class="grid grid-cols-2 gap-4">
+                            <div><span class="text-xs text-slate-500 block">Athlete</span><span class="font-bold text-sm">${c.athletic === 'yes' ? 'Yes' : 'No'}</span></div>
+                            ${c.athletic === 'yes' ? `<div><span class="text-xs text-slate-500 block">Sport</span><span class="font-bold text-sm">${c.athleticType || '—'}</span></div>` : ''}
+                            <div class="col-span-2 text-xs text-slate-500">
+                                Prev Injury: <span class="font-bold text-slate-800">${c.prevInjuryLocation || 'None'}</span>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('info-content').innerHTML = html;
+            document.getElementById('info-modal').classList.remove('hidden');
+        }
+
+        document.addEventListener('input', (e) => {
+            if (e.target.id === 'session-progress') document.getElementById('session-progress-val').innerText = `${e.target.value}%`;
+            if (e.target.id === 'map-vas') document.getElementById('map-vas-val').innerText = e.target.value;
+        });
+
+        async function ensureToken() {
+            const tok = localStorage.getItem('vb_token');
+            if (tok) return tok;
+            const res = await fetch(`${API_URL}/auth/refresh`, { method: 'POST', credentials: 'include' });
+            if (!res.ok) return null;
+            const data = await res.json();
+            if (data.token) { localStorage.setItem('vb_token', data.token); return data.token; }
+            return null;
+        }
+        function calculateAge(dob) { return Math.abs(new Date(Date.now() - new Date(dob).getTime()).getUTCFullYear() - 1970); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.body.style.overflow = ''; }
+        function scheduleTokenRefresh() { setInterval(() => ensureToken(), 10 * 60 * 1000); }
+    </script>
+</body>
+</html>

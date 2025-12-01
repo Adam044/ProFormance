@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Violette Banda | Elite Sports Rehab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --c-maroon: #7a2747;
+            --c-olive: #7a8a41;
+            --c-dark: #1a1a1a;
+        }
+        body { 
+            font-family: 'Manrope', sans-serif; 
+            background-color: #fdfdfd;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent; /* Mobile fix */
+        }
+        h1, h2, h3, .display-font { font-family: 'Oswald', sans-serif; letter-spacing: -0.02em; }
+        
+        /* --- Brand Colors --- */
+        .text-maroon { color: var(--c-maroon); }
+        .bg-maroon { background-color: var(--c-maroon); }
+        .text-olive { color: var(--c-olive); }
+        .bg-olive { background-color: var(--c-olive); }
+        .border-maroon { border-color: var(--c-maroon); }
+        .border-olive { border-color: var(--c-olive); }
+
+        /* --- Textures --- */
+        .noise-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 50; opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        
+        .elite-gradient {
+            background: radial-gradient(circle at top right, rgba(122,138,65,0.1), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(122,39,71,0.08), transparent 40%);
+        }
+
+        /* --- Animations --- */
+        .reveal-on-scroll { opacity: 0; transform: translateY(20px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal-on-scroll.visible { opacity: 1; transform: translateY(0); }
+        
+        /* --- Marquee --- */
+        .marquee-container { overflow: hidden; white-space: nowrap; position: relative; }
+        .marquee-content { display: inline-block; animation: marquee 20s linear infinite; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        /* --- Custom Shapes --- */
+        .clip-angle-br { clip-path: polygon(0 0, 100% 0, 100% 88%, 88% 100%, 0 100%); }
+        .clip-angle-tl { clip-path: polygon(0 0, 88% 0, 100% 12%, 100% 100%, 0 100%); }
+
+        /* --- Mobile Nav --- */
+        #mobile-menu {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(100%);
+        }
+        #mobile-menu.open {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body class="text-slate-900 antialiased elite-gradient flex flex-col min-h-screen">
+
+    <div class="noise-bg"></div>
+
+    <nav class="fixed w-full z-40 transition-all duration-300 bg-white/90 backdrop-blur-md border-b border-white/20" id="navbar">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center h-16 md:h-20">
+            <a href="#" class="block hover:opacity-80 transition-opacity">
+                <img src="/images/violet-logo.png" alt="ProFormance Logo" class="h-8 md:h-10 w-auto object-contain">
+            </a>
+
+            <div class="hidden md:flex items-center gap-8 font-semibold text-sm tracking-wide uppercase">
+                <a href="#philosophy" class="hover:text-maroon transition-colors">Philosophy</a>
+                <a href="#services" class="hover:text-maroon transition-colors">Services</a>
+                <a href="#contact" class="hover:text-maroon transition-colors">Contact</a>
+                <a href="auth.html" class="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-maroon transition-colors">
+                    Login
+                </a>
+            </div>
+
+            <button id="menu-btn" class="md:hidden text-slate-900 focus:outline-none p-2">
+                <i data-lucide="menu" class="w-7 h-7"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div id="mobile-menu" class="fixed inset-0 z-50 bg-white flex flex-col md:hidden">
+        <div class="flex justify-between items-center p-6 border-b border-slate-100 h-16">
+            <img src="/images/violet-logo.png" alt="ProFormance" class="h-8 w-auto object-contain">
+            <button id="close-menu-btn" class="p-2 text-slate-500 hover:text-maroon">
+                <i data-lucide="x" class="w-8 h-8"></i>
+            </button>
+        </div>
+        <div class="flex flex-col p-8 gap-8 text-2xl font-['Oswald'] font-bold uppercase tracking-wide">
+            <a href="#philosophy" class="mobile-link hover:text-maroon">Philosophy</a>
+            <a href="#services" class="mobile-link hover:text-maroon">Services</a>
+            <a href="#contact" class="mobile-link hover:text-maroon">Contact</a>
+            <a href="auth.html" class="mobile-link text-olive">Patient Login</a>
+        </div>
+        <div class="mt-auto p-8 border-t border-slate-100 bg-slate-50">
+            <a href="https://instagram.com/violette_sports_rehab" target="_blank" class="flex items-center gap-3 text-slate-600 font-medium">
+                <i data-lucide="instagram" class="w-6 h-6"></i>
+                Follow on Instagram
+            </a>
+        </div>
+    </div>
+
+    <header class="relative pt-24 pb-16 px-6 overflow-hidden">
+        <div class="absolute top-0 right-0 w-[300px] h-[300px] bg-olive/10 rounded-full blur-[80px] -z-10 animate-pulse"></div>
+        
+        <div class="max-w-7xl mx-auto flex flex-col md:grid md:grid-cols-12 gap-8 items-center">
+            
+            <div class="md:col-span-7 space-y-6 reveal-on-scroll text-center md:text-left">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-olive/30 bg-olive/5 text-olive text-xs font-bold uppercase tracking-widest mx-auto md:mx-0">
+                    <span class="w-2 h-2 rounded-full bg-olive animate-pulse"></span>
+                    Accepting New Athletes
+                </div>
+                
+                <h1 class="text-5xl sm:text-6xl md:text-8xl font-bold leading-[0.9] text-slate-900">
+                    DON'T JUST RECOVER.<br>
+                    <span class="text-maroon">EVOLVE.</span>
+                </h1>
+                
+                <p class="text-lg md:text-2xl text-slate-600 font-light max-w-xl mx-auto md:mx-0 leading-relaxed">
+                    Bridging the gap between medical rehab and elite performance. 
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4 pt-2 w-full sm:w-auto">
+                    <a href="#contact" class="w-full sm:w-auto px-8 py-4 bg-maroon text-white font-bold text-center uppercase tracking-wide rounded-lg sm:rounded-none sm:clip-angle-br shadow-xl shadow-maroon/20 hover:bg-slate-900 transition-colors">
+                        Start Your Journey
+                    </a>
+                    <a href="#services" class="w-full sm:w-auto px-8 py-4 bg-white border border-slate-200 text-slate-900 font-bold text-center uppercase tracking-wide rounded-lg sm:rounded-none sm:clip-angle-tl hover:border-olive hover:text-olive transition-colors">
+                        Explore Methods
+                    </a>
+                </div>
+            </div>
+
+            <div class="md:col-span-5 relative reveal-on-scroll w-full mt-6 md:mt-0">
+                <div class="relative z-10">
+                    <img src="/images/violette+profilepic.jpg" alt="Violette Banda" class="w-full h-[450px] md:h-[600px] object-cover rounded-2xl md:rounded-none md:clip-angle-br shadow-2xl object-top">
+                    
+                    <div class="absolute -bottom-4 right-4 md:-bottom-6 md:-left-6 bg-white p-4 md:p-6 shadow-xl border-l-4 border-olive rounded-lg md:rounded-none md:clip-angle-tl z-20">
+                        <p class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Your Specialist</p>
+                        <p class="text-xl md:text-2xl font-bold text-slate-900 font-['Oswald']">VIOLETTE BANDA</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="bg-slate-900 py-3 md:py-4 border-y border-slate-800 -rotate-1 scale-[1.02] z-20 relative overflow-hidden">
+        <div class="marquee-container">
+            <div class="marquee-content text-white font-['Oswald'] text-xl md:text-2xl font-bold tracking-widest uppercase opacity-60">
+                Performance • Recovery • Prevention • Strength • Mobility • Rehabilitation • Elite Mindset • Performance • Recovery • Prevention • Strength • Mobility • Rehabilitation • Elite Mindset •
+            </div>
+        </div>
+    </div>
+
+    <section id="philosophy" class="py-16 md:py-24 bg-white relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:grid md:grid-cols-2 gap-12 items-center">
+                
+                <div class="reveal-on-scroll order-2 md:order-1">
+                    <h2 class="text-xs font-bold text-maroon uppercase tracking-widest mb-3">The Philosophy</h2>
+                    <h3 class="text-4xl md:text-5xl font-bold text-slate-900 mb-6">ELITE CARE FOR<br>THE DRIVEN.</h3>
+                    <p class="text-base md:text-lg text-slate-600 mb-6 leading-relaxed">
+                        At <span class="font-bold text-slate-900">ProFormance</span>, I use a hybrid approach that combines clinical precision with athletic conditioning. Whether you are a professional athlete or someone who refuses to let pain slow them down, my goal is to turn you into an elite player within a year.
+                    </p>
+                    
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-100">
+                        <div class="flex items-center gap-4 mb-3">
+                             <div class="w-8 h-8 rounded-full bg-olive text-white flex items-center justify-center font-bold text-sm">1</div>
+                             <span class="font-bold text-slate-800 text-sm md:text-base">Root Cause Analysis</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-8 h-8 rounded-full bg-maroon text-white flex items-center justify-center font-bold text-sm">2</div>
+                            <span class="font-bold text-slate-800 text-sm md:text-base">Data-Driven Recovery</span>
+                       </div>
+                    </div>
+                </div>
+
+                <div class="order-1 md:order-2 grid grid-cols-2 gap-3 reveal-on-scroll">
+                    <img src="/images/homepage2.jpg" class="w-full h-40 md:h-64 object-cover rounded-lg shadow-md">
+                    <div class="bg-maroon w-full h-40 md:h-64 rounded-lg flex flex-col items-center justify-center text-center p-2">
+                        <span class="block text-4xl md:text-5xl font-bold text-white mb-1">1%</span>
+                        <span class="text-white/80 font-medium uppercase text-[10px] md:text-sm tracking-widest">Better Each Day</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="services" class="py-16 md:py-24 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="mb-12 reveal-on-scroll">
+                <h2 class="text-4xl md:text-5xl font-bold text-slate-900 mb-2">THE TOOLKIT</h2>
+                <div class="h-1 w-20 bg-gradient-to-r from-olive to-maroon rounded-full"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="md:col-span-2 bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-slate-100 reveal-on-scroll">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-3 bg-maroon text-white rounded-xl"><i data-lucide="dumbbell" class="w-6 h-6"></i></div>
+                    </div>
+                    <h3 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Sports Rehabilitation</h3>
+                    <p class="text-slate-600 text-sm md:text-lg leading-relaxed">
+                        We simulate game-day stress in a controlled environment to ensure your return to sport is fail-proof.
+                    </p>
+                </div>
+
+                <div class="bg-gradient-to-br from-[#7a8a41] to-[#5d6b2f] p-6 md:p-10 rounded-2xl shadow-md text-white md:row-span-2 reveal-on-scroll relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                    <div class="relative z-10">
+                        <div class="p-3 bg-white/20 backdrop-blur-sm w-fit rounded-xl mb-4 border border-white/30">
+                            <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <h3 class="text-2xl md:text-3xl font-bold mb-3 text-white">Manual Therapy</h3>
+                        <p class="text-white/90 text-sm md:text-base leading-relaxed mb-8 font-medium">
+                            Hands-on mobilization to restore joint mechanics. Sometimes the body needs a physical reset.
+                        </p>
+                        <ul class="space-y-4">
+                            <li class="flex items-center gap-3">
+                                <div class="w-2 h-2 bg-[#d4e1a8] rounded-full shadow-sm"></div> 
+                                <span class="text-white font-semibold text-sm">Joint Mobilization</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <div class="w-2 h-2 bg-[#d4e1a8] rounded-full shadow-sm"></div> 
+                                <span class="text-white font-semibold text-sm">Soft Tissue Release</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <div class="w-2 h-2 bg-[#d4e1a8] rounded-full shadow-sm"></div> 
+                                <span class="text-white font-semibold text-sm">Cupping Therapy</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-slate-100 reveal-on-scroll">
+                    <div class="p-3 bg-slate-100 w-fit rounded-xl mb-4 text-slate-800"><i data-lucide="zap" class="w-6 h-6"></i></div>
+                    <h3 class="text-xl md:text-2xl font-bold text-slate-900 mb-2">Dry Needling</h3>
+                    <p class="text-slate-600 text-sm">Targeting trigger points to release chronic muscle tension.</p>
+                </div>
+                
+                <div class="bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-slate-100 reveal-on-scroll">
+                    <div class="p-3 bg-slate-100 w-fit rounded-xl mb-4 text-slate-800"><i data-lucide="shield" class="w-6 h-6"></i></div>
+                    <h3 class="text-xl md:text-2xl font-bold text-slate-900 mb-2">Injury Prevention</h3>
+                    <p class="text-slate-600 text-sm">Screening protocols to identify weaknesses early.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="py-16 md:py-24 bg-slate-900 relative overflow-hidden mt-auto">
+        <div class="max-w-4xl mx-auto px-6 relative z-10 text-center reveal-on-scroll">
+            <h2 class="text-4xl md:text-6xl font-bold text-white mb-4 tracking-tight">READY TO COMMIT?</h2>
+            <p class="text-lg text-slate-400 mb-8">
+                Schedule your assessment today.
+            </p>
+
+            <div class="bg-white/5 backdrop-blur-lg border border-white/10 p-6 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl">
+                <a href="https://wa.me/972568887873" class="flex items-center justify-center gap-3 w-full py-4 bg-[#25D366] text-white font-bold text-lg rounded-xl hover:bg-[#128C7E] transition-all transform hover:-translate-y-1 shadow-lg mb-8">
+                    <i data-lucide="message-circle" class="w-6 h-6"></i>
+                    Book via WhatsApp
+                </a>
+
+                <div class="flex flex-col md:flex-row justify-center gap-6 md:gap-12 text-left md:text-center border-t border-white/10 pt-8">
+                     <div class="flex items-center md:flex-col gap-4">
+                        <div class="w-10 h-10 rounded-full bg-maroon flex items-center justify-center text-white shrink-0"><i data-lucide="phone" class="w-5 h-5"></i></div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Call</p>
+                            <a href="tel:+972568887873" class="font-bold text-white">+972 56-888-7873</a>
+                        </div>
+                    </div>
+                    <div class="flex items-center md:flex-col gap-4">
+                        <div class="w-10 h-10 rounded-full bg-olive flex items-center justify-center text-white shrink-0"><i data-lucide="map-pin" class="w-5 h-5"></i></div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Location</p>
+                            <p class="font-bold text-white">Sareyyet Ramallah</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-black text-slate-600 py-10 border-t border-slate-900">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="bg-white p-3 rounded-lg shadow-lg">
+                <img src="/images/violet-logo.png" alt="ProFormance" class="h-8 w-auto">
+            </div>
+            
+            <div class="text-xs font-medium text-center md:text-right space-y-1">
+                <div class="text-slate-400">&copy; 2025 Violette Banda. All rights reserved.</div>
+                <div class="text-slate-600">Website done by <span class="text-slate-500 font-bold">Adam Hawash</span></div>
+            </div>
+            
+            <div>
+                <a href="https://instagram.com/violette_sports_rehab" target="_blank" class="text-slate-400 hover:text-maroon transition-colors p-2 block">
+                    <i data-lucide="instagram" class="w-6 h-6"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // Scroll Animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal-on-scroll').forEach((el) => observer.observe(el));
+
+        // Mobile Menu Logic
+        const menuBtn = document.getElementById('menu-btn');
+        const closeBtn = document.getElementById('close-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileLinks = document.querySelectorAll('.mobile-link');
+
+        function toggleMenu() {
+            mobileMenu.classList.toggle('open');
+            document.body.classList.toggle('overflow-hidden');
+        }
+
+        menuBtn.addEventListener('click', toggleMenu);
+        closeBtn.addEventListener('click', toggleMenu);
+        mobileLinks.forEach(link => link.addEventListener('click', toggleMenu));
+    </script>
+</body>
+</html>

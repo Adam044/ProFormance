@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Clinical Command | Violette Banda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --c-maroon: #7a2747;
+            --c-olive: #7a8a41;
+            --c-dark: #1a1a1a;
+        }
+        body { 
+            font-family: 'Manrope', sans-serif; 
+            background-color: #f8f9fa;
+            overflow: hidden; 
+        }
+        h1, h2, h3, .display-font { font-family: 'Oswald', sans-serif; letter-spacing: -0.02em; }
+
+        .bg-maroon { background-color: var(--c-maroon); }
+        .text-maroon { color: var(--c-maroon); }
+        .border-maroon { border-color: var(--c-maroon); }
+        .bg-olive { background-color: var(--c-olive); }
+        .text-olive { color: var(--c-olive); }
+        
+        .noise-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 50; opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* Inputs */
+        .input-pro {
+            width: 100%; padding: 0.75rem; background-color: #f8fafc;
+            border: 1px solid #e2e8f0; border-radius: 0.75rem;
+            outline: none; transition: all 0.2s; font-weight: 600; color: #1e293b; font-size: 0.9rem;
+        }
+        .input-pro:focus {
+            border-color: var(--c-maroon); background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(122, 39, 71, 0.1);
+        }
+
+        .btn-filter {
+            padding: 0.25rem 0.5rem; font-size: 0.7rem; font-weight: 700;
+            border-radius: 0.5rem; transition: all 0.2s; white-space: nowrap;
+        }
+        .btn-filter.active { background-color: #1e293b; color: white; }
+        .btn-filter.inactive { background-color: transparent; color: #64748b; }
+
+        /* Sidebar Transition */
+        #sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-open { transform: translateX(0) !important; }
+        .sidebar-closed { transform: translateX(-100%); }
+        
+        /* Desktop override for sidebar */
+        @media (min-width: 768px) {
+            .sidebar-closed { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col overflow-hidden text-slate-800">
+
+    <div class="noise-bg"></div>
+
+    <nav class="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 flex justify-between items-center px-4 md:px-6 shrink-0 z-40 relative">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleSidebar()" class="md:hidden p-2 -ml-2 text-slate-500 hover:text-maroon">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+            
+            <img src="/images/violet-logo.png" alt="ProFormance" class="h-6 md:h-7 w-auto object-contain select-none">
+            <div class="h-6 w-px bg-slate-200 hidden md:block"></div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest hidden md:block">Clinical Command</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="hidden md:flex items-center gap-2 px-3 py-1 bg-olive/10 border border-olive/20 rounded-full text-[10px] font-bold text-olive uppercase">
+                <div class="w-1.5 h-1.5 rounded-full bg-olive animate-pulse"></div>
+                <span>System Operational</span>
+            </div>
+            <button onclick="logout()" class="p-2 text-slate-400 hover:text-maroon transition-colors bg-slate-50 rounded-lg">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="flex-grow flex overflow-hidden relative z-10">
+        
+        <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-20 hidden md:hidden glass-blur"></div>
+
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-72 bg-white border-r border-slate-200 flex flex-col shadow-xl md:shadow-none md:static md:w-80 sidebar-closed md:translate-x-0 pt-16 md:pt-0">
+            <div class="p-4 border-b border-slate-100 bg-white">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-xs font-bold text-slate-900 uppercase tracking-widest display-font text-lg">Patients</span>
+                    <button onclick="openModal('add-client-modal'); if(window.innerWidth < 768) toggleSidebar();" class="bg-maroon text-white p-2 rounded-lg hover:bg-slate-900 transition-colors shadow-lg shadow-maroon/20">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                
+                <div class="relative mb-2">
+                    <i data-lucide="search" class="absolute left-3 top-3 w-4 h-4 text-slate-400"></i>
+                    <input type="text" placeholder="Search..." oninput="filterClients(this.value)" class="input-pro pl-9 py-2 text-sm">
+                </div>
+                
+                <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                    <button id="filter-mode-all" onclick="setClientModeFilter('all')" class="flex-1 btn-filter active">All</button>
+                    <button id="filter-mode-online" onclick="setClientModeFilter('online')" class="flex-1 btn-filter inactive">Online</button>
+                    <button id="filter-mode-inperson" onclick="setClientModeFilter('in_person')" class="flex-1 btn-filter inactive">Clinic</button>
+                </div>
+            </div>
+            
+            <div id="client-list" class="flex-grow overflow-y-auto p-2 space-y-1 bg-slate-50/50">
+                </div>
+        </aside>
+
+        <main id="main-view" class="flex-grow bg-[#f8f9fa] relative overflow-hidden flex flex-col w-full">
+            <div id="analytics-view" class="absolute inset-0 p-4 md:p-8 overflow-y-auto">
+                
+                <div class="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 gap-4">
+                    <div>
+                        <p class="text-[10px] font-bold text-olive uppercase tracking-widest mb-1">Admin Dashboard</p>
+                        <h2 class="text-3xl md:text-5xl font-bold text-slate-900 display-font uppercase">Good Afternoon.</h2>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl border border-slate-200 p-3 flex items-center gap-3 shadow-sm w-full md:w-auto">
+                        <div class="p-2 bg-slate-50 text-slate-900 rounded-lg"><i data-lucide="cloud-sun" class="w-5 h-5"></i></div>
+                        <div class="flex-grow md:flex-grow-0">
+                            <h3 id="weather-city" class="font-bold text-slate-900 text-xs uppercase tracking-wider">Ramallah</h3>
+                            <p id="weather-date" class="text-[10px] text-slate-400 font-bold uppercase">—</p>
+                        </div>
+                        <div class="text-right">
+                            <p id="weather-temp" class="text-lg font-bold text-slate-900 display-font">--°C</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 relative overflow-hidden group">
+                        <div class="w-12 h-12 rounded-xl bg-maroon text-white flex items-center justify-center shadow-md"><i data-lucide="users" class="w-6 h-6"></i></div>
+                        <div>
+                            <p class="text-3xl font-bold text-slate-900 display-font" id="stat-total">0</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Active Roster</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 relative overflow-hidden group">
+                        <div class="w-12 h-12 rounded-xl bg-olive text-white flex items-center justify-center shadow-md"><i data-lucide="dumbbell" class="w-6 h-6"></i></div>
+                        <div>
+                            <p class="text-3xl font-bold text-slate-900 display-font" id="stat-sessions">0</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Sessions</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 relative overflow-hidden group">
+                        <div class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-md"><i data-lucide="calendar" class="w-6 h-6"></i></div>
+                        <div>
+                            <p class="text-3xl font-bold text-slate-900 display-font" id="stat-upcoming">0</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Upcoming</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div class="xl:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                            <h3 class="font-bold text-slate-900 text-lg display-font uppercase tracking-wide">Schedule</h3>
+                            <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-lg overflow-x-auto">
+                                <button id="filter-range-today" onclick="setDateRange('today')" class="btn-filter inactive">Today</button>
+                                <button id="filter-range-7" onclick="setDateRange('7')" class="btn-filter active">Week</button>
+                                <button id="filter-range-30" onclick="setDateRange('30')" class="btn-filter inactive">Month</button>
+                                <button id="filter-range-all" onclick="setDateRange('all')" class="btn-filter inactive">All</button>
+                            </div>
+                        </div>
+                        <div id="upcoming-list" class="space-y-3"></div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-slate-900 text-lg display-font uppercase">Insights</h3>
+                            <div class="flex gap-1">
+                                    <button id="ins-cat-patients" onclick="setInsightsCategory('patients')" class="p-1.5 rounded bg-slate-900 text-white"><i data-lucide="users" class="w-3 h-3"></i></button>
+                                    <button id="ins-cat-sessions" onclick="setInsightsCategory('sessions')" class="p-1.5 rounded bg-slate-100 text-slate-400"><i data-lucide="bar-chart-2" class="w-3 h-3"></i></button>
+                                    <button id="ins-cat-finance" onclick="setInsightsCategory('finance')" class="p-1.5 rounded bg-slate-100 text-slate-400"><i data-lucide="dollar-sign" class="w-3 h-3"></i></button>
+                            </div>
+                        </div>
+                        <div id="insights-cards" class="grid grid-cols-2 gap-3"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="add-client-modal" onclick="if(event.target===this) closeModal('add-client-modal')" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto border border-white/50">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-900 display-font uppercase">New Athlete</h2>
+                <button onclick="closeModal('add-client-modal')" class="p-2 bg-slate-50 rounded-full hover:bg-red-50 hover:text-red-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <form onsubmit="handleCreateClient(event)" class="space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Full Name</label>
+                        <input name="name" required class="input-pro" placeholder="e.g. John Doe">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Date of Birth</label>
+                        <input name="dob" type="date" required class="input-pro">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Gender</label>
+                        <select name="gender" class="input-pro">
+                            <option>Female</option>
+                            <option>Male</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Phone</label>
+                        <input name="phone" type="tel" required class="input-pro">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Email</label>
+                        <input name="email" type="email" required class="input-pro">
+                    </div>
+                     <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Interaction Mode</label>
+                        <select name="visitMode" class="input-pro">
+                            <option value="in_person">In Person</option>
+                            <option value="online">Online</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Primary Complaint</label>
+                        <textarea name="primaryIssue" rows="2" required class="input-pro" placeholder="Main injury description..."></textarea>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Occupation</label>
+                        <select name="occupation" class="input-pro mb-2">
+                            <option value="office_work">Office Work</option>
+                            <option value="active_work">Active Work</option>
+                        </select>
+                        <label class="flex items-center gap-2 text-xs font-bold text-slate-500">
+                            <input type="checkbox" id="occupation-custom-enable" onchange="toggleOccupationCustom()" class="rounded border-slate-300">
+                            Other (Custom)
+                        </label>
+                        <input id="occupation-custom" name="occupationCustom" placeholder="Specify occupation" class="input-pro mt-2 hidden">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Medication?</label>
+                        <div class="flex gap-4 mb-2">
+                            <label class="flex items-center gap-2 text-sm font-bold"><input type="radio" name="medication" value="yes" class="accent-maroon"> Yes</label>
+                            <label class="flex items-center gap-2 text-sm font-bold"><input type="radio" name="medication" value="no" checked class="accent-maroon"> No</label>
+                        </div>
+                        <input name="medicationNote" placeholder="List medications if yes..." class="input-pro">
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div class="flex items-center justify-between cursor-pointer" onclick="toggleAthleticProfile()">
+                        <div class="flex items-center gap-2">
+                            <div class="p-1.5 bg-maroon text-white rounded"><i data-lucide="activity" class="w-4 h-4"></i></div>
+                            <span class="font-bold text-slate-800 text-sm uppercase">Athletic Data (Optional)</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                    </div>
+                    
+                    <div id="athletic-profile-section" class="hidden mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-200 pt-4">
+                         
+                         <div class="md:col-span-2">
+                            <label class="text-xs font-bold text-slate-400 uppercase">Is Athlete?</label>
+                            <div class="flex gap-4 mt-2 mb-2">
+                                <label class="flex items-center gap-2 font-bold text-sm"><input type="radio" name="athletic" value="yes" onchange="toggleAthleticDetails(true)" class="accent-maroon"> Yes</label>
+                                <label class="flex items-center gap-2 font-bold text-sm"><input type="radio" name="athletic" value="no" checked onchange="toggleAthleticDetails(false)" class="accent-maroon"> No</label>
+                            </div>
+                         </div>
+                         
+                         <div id="athletic-details" class="md:col-span-2 hidden grid grid-cols-2 gap-4 mb-4">
+                            <input name="athleticType" placeholder="Sport Type" class="input-pro">
+                            <input name="athleticPosition" placeholder="Position" class="input-pro">
+                         </div>
+
+                         <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div>
+                                <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Previous Injury</label>
+                                <div class="grid grid-cols-2 gap-2 mb-2">
+                                    <select name="prevInjuryLocation" class="input-pro text-xs">
+                                        <option value="">-- Part --</option>
+                                        <option>Head</option><option>Torso</option><option>Hips</option>
+                                        <option>Left Arm</option><option>Right Arm</option>
+                                        <option>Left Leg</option><option>Right Leg</option>
+                                    </select>
+                                    <select name="prevInjuryYear" class="input-pro text-xs">
+                                        <option value="">-- Year --</option>
+                                        <option>2025</option><option>2024</option><option>2023</option><option>2022</option><option>2021</option><option>2020</option>
+                                    </select>
+                                </div>
+                                <input name="prevInjuryNote" placeholder="Injury notes..." class="input-pro">
+                             </div>
+                             <div class="space-y-3">
+                                 <div>
+                                    <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Training Load (Days/Week)</label>
+                                    <input type="number" name="trainingLoadDays" class="input-pro">
+                                 </div>
+                                 <div>
+                                     <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Sleep Hours (Avg)</label>
+                                     <input type="number" name="sleepHours" class="input-pro" value="8">
+                                 </div>
+                                 <div>
+                                     <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Sudden Load Change?</label>
+                                     <div class="flex gap-4">
+                                        <label class="flex items-center gap-2 text-sm font-bold"><input type="radio" name="suddenLoadChanges" value="yes" class="accent-maroon"> Yes</label>
+                                        <label class="flex items-center gap-2 text-sm font-bold"><input type="radio" name="suddenLoadChanges" value="no" checked class="accent-maroon"> No</label>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
+                 </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="closeModal('add-client-modal')" class="px-6 py-3 text-slate-500 font-bold hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
+                    <button class="px-8 py-3 bg-maroon text-white rounded-xl font-bold shadow-xl hover:bg-slate-900 transition-colors uppercase tracking-wide display-font text-lg">Create File</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3003/api';
+        let clients = [];
+        let payments = [];
+        let clientModeFilter = 'all';
+        const analyticsFilters = { range: '7' };
+        const insightsFilters = { category: 'patients', gender: 'all' };
+
+        const user = JSON.parse(localStorage.getItem('vb_user'));
+        if (!user || user.role !== 'admin') window.location.href = 'auth.html';
+
+        window.onload = async () => {
+            await ensureToken();
+            fetchClients();
+            fetchPayments();
+            loadWeather();
+            lucide.createIcons();
+            scheduleTokenRefresh();
+        };
+
+        function logout() {
+            localStorage.removeItem('vb_user');
+            window.location.href = 'index.html';
+        }
+
+        // --- MOBILE SIDEBAR LOGIC ---
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sb.classList.contains('sidebar-closed')) {
+                sb.classList.remove('sidebar-closed');
+                sb.classList.add('sidebar-open');
+                overlay.classList.remove('hidden');
+            } else {
+                sb.classList.add('sidebar-closed');
+                sb.classList.remove('sidebar-open');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // --- CORE DATA ---
+        async function fetchClients() {
+            const tok = localStorage.getItem('vb_token');
+            let res = await fetch(`${API_URL}/clients`, { headers: { Authorization: tok ? `Bearer ${tok}` : '' } });
+            if (res.status === 401) {
+                await ensureToken();
+                const t2 = localStorage.getItem('vb_token');
+                res = await fetch(`${API_URL}/clients`, { headers: { Authorization: t2 ? `Bearer ${t2}` : '' } });
+            }
+            if (!res.ok) { clients = []; return; }
+            const data = await res.json();
+            clients = Array.isArray(data) ? data : [];
+            renderSidebar();
+            updateAnalytics();
+        }
+
+        async function fetchPayments() {
+            const tok = localStorage.getItem('vb_token');
+            let res = await fetch(`${API_URL}/payments`, { headers: { Authorization: tok ? `Bearer ${tok}` : '' } });
+            if (!res.ok) { payments = []; return; }
+            const data = await res.json();
+            payments = Array.isArray(data) ? data : [];
+            updateAnalytics(); // Re-render insights if depends on payment
+        }
+
+        // --- RENDERERS ---
+        function renderSidebar(filter = '') {
+            const container = document.getElementById('client-list');
+            const filtered = clients
+                .filter(c => c.name.toLowerCase().includes(filter.toLowerCase()))
+                .filter(c => clientModeFilter === 'all' ? true : (c.visitMode === clientModeFilter));
+
+            container.innerHTML = filtered.map(c => `
+                <div id="client-${c.id}" onclick="window.location.href='patient.html?id=${c.id}'" class="p-3 rounded-xl border border-transparent cursor-pointer hover:bg-white hover:border-maroon/20 hover:shadow-sm transition-all group relative overflow-hidden bg-white/50 mb-1">
+                    <div class="flex justify-between items-center z-10 relative">
+                        <span class="font-bold text-slate-700 group-hover:text-maroon text-sm uppercase tracking-tight">${c.name}</span>
+                        ${c.nextSession ? '<div class="w-2 h-2 bg-olive rounded-full shadow-[0_0_5px_rgba(122,138,65,0.6)]"></div>' : ''}
+                    </div>
+                    <div class="text-xs text-slate-400 truncate mt-1 group-hover:text-slate-500">${c.primaryIssue || 'No active issue'}</div>
+                </div>
+            `).join('');
+            applyModeFilterStyles();
+        }
+
+        function updateAnalytics() {
+            // Stats logic remains identical, just ensuring elements exist
+            const totalSessions = clients.reduce((acc, c) => acc + (c.history?.filter(h => h.type === 'session').length || 0), 0);
+            document.getElementById('stat-total').innerText = clients.length;
+            document.getElementById('stat-sessions').innerText = totalSessions;
+            
+            const now = new Date();
+            const sameDay = (d1, d2) => new Date(d1).toDateString() === new Date(d2).toDateString();
+            const inNextDays = (d, n) => {
+                const diff = (new Date(d) - now) / (1000 * 60 * 60 * 24);
+                return diff >= 0 && diff <= n;
+            };
+            const dateFilter = (d) => {
+                if (analyticsFilters.range === 'today') return sameDay(d, now);
+                if (analyticsFilters.range === '7') return inNextDays(d, 7);
+                if (analyticsFilters.range === '30') return inNextDays(d, 30);
+                return new Date(d) >= now;
+            };
+            
+            const upcoming = clients
+                .filter(c => c.nextSession && dateFilter(c.nextSession))
+                .sort((a, b) => new Date(a.nextSession) - new Date(b.nextSession));
+                
+            document.getElementById('stat-upcoming').innerText = upcoming.length;
+            
+            const upcomingHtml = upcoming.slice(0, 10).map(c => {
+                const d = new Date(c.nextSession);
+                const isToday = sameDay(d, now);
+                const badge = isToday ? '<span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-olive text-white">Today</span>' : '';
+                const dateStr = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return `
+                <a href="patient.html?id=${c.id}" class="block p-4 rounded-xl border border-slate-100 hover:border-maroon/30 hover:bg-slate-50 transition-all group bg-white shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-400 group-hover:bg-maroon group-hover:text-white flex items-center justify-center transition-colors"><i data-lucide="user" class="w-5 h-5"></i></div>
+                            <div>
+                                <p class="font-bold text-slate-900 group-hover:text-maroon text-sm uppercase">${c.name}</p>
+                                <p class="text-xs text-slate-400 font-medium">${c.primaryIssue || 'Checkup'}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-slate-900 text-sm">${dateStr}</p>
+                            <p class="text-xs text-olive font-bold">${timeStr}</p>
+                        </div>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between border-t border-slate-50 pt-2">
+                        <div class="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider"><i data-lucide="clock" class="w-3 h-3"></i><span>${isToday ? 'Due Shortly' : 'Upcoming'}</span></div>
+                        ${badge}
+                    </div>
+                </a>`;
+            }).join('');
+            document.getElementById('upcoming-list').innerHTML = upcomingHtml || '<div class="p-4 border border-dashed border-slate-200 rounded-xl text-center text-sm text-slate-400">No sessions in range.</div>';
+
+            renderInsights();
+            applyFilterStyles();
+            lucide.createIcons();
+        }
+
+        function renderInsights() {
+            const genderFilter = (c) => insightsFilters.gender === 'all' ? true : (c.gender === insightsFilters.gender);
+            const base = clients.filter(genderFilter);
+            let html = '';
+            
+            const card = (label, val) => `<div class="p-3 rounded-xl border border-slate-100 bg-slate-50 flex flex-col justify-center text-center"><div class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">${label}</div><p class="text-2xl font-bold text-slate-800 display-font">${val}</p></div>`;
+
+            if (insightsFilters.category === 'patients') {
+                const total = base.length;
+                const female = base.filter(c => c.gender === 'Female').length;
+                const male = base.filter(c => c.gender === 'Male').length;
+                const avgAge = Math.round(base.reduce((acc, c) => acc + (c.dob ? (Math.abs(new Date(Date.now() - new Date(c.dob).getTime()).getUTCFullYear() - 1970)) : 0), 0) / (total || 1));
+                html = `${card('Total', total)} ${card('Female', female)} ${card('Male', male)} ${card('Avg Age', avgAge)}`;
+            } else if (insightsFilters.category === 'sessions') {
+                const allSessions = base.flatMap(c => c.history || []).filter(h => h.type === 'session');
+                const total = allSessions.length;
+                const sessionsToday = allSessions.filter(h => new Date(h.date).toDateString() === new Date().toDateString()).length;
+                html = `${card('Total Log', total)} ${card('Today', sessionsToday)} ${card('Avg/Pt', (total && base.length) ? (total / base.length).toFixed(1) : '0')}`;
+            } else {
+                const paid = payments.filter(p => p.status === 'paid');
+                const revenueILS = paid.reduce((acc, p) => p.currency === 'ILS' ? acc + (Number(p.amount) || 0) : acc, 0);
+                html = `${card('Paid', paid.length)} ${card('Rev ILS', revenueILS.toLocaleString())} ${card('Pending', payments.filter(p => p.status !== 'paid').length)}`;
+            }
+            document.getElementById('insights-cards').innerHTML = html;
+            applyInsightsFilterStyles();
+        }
+
+        // --- FILTER STYLES ---
+        function setInsightsCategory(cat) { insightsFilters.category = cat; renderInsights(); }
+        function setGenderFilter(gender) { insightsFilters.gender = gender; renderInsights(); }
+        
+        function applyFilterStyles() {
+            const rangeIds = ['today','7','30','all'];
+            rangeIds.forEach(r => {
+                const el = document.getElementById(`filter-range-${r}`);
+                if (el) el.className = `btn-filter ${analyticsFilters.range === r ? 'active' : 'inactive'}`;
+            });
+        }
+        function setClientModeFilter(mode) {
+            clientModeFilter = mode;
+            renderSidebar(document.querySelector('aside input[type="text"]')?.value || '');
+        }
+        function applyModeFilterStyles() {
+            const modes = ['all','online','in_person'];
+            modes.forEach(m => {
+                const el = document.getElementById(`filter-mode-${m}`);
+                if (el) el.className = `flex-1 btn-filter ${clientModeFilter === m ? 'active' : 'inactive'}`;
+            });
+        }
+        function applyInsightsFilterStyles() {
+            const catIds = ['patients','sessions','finance'];
+            catIds.forEach(c => {
+                const el = document.getElementById(`ins-cat-${c}`);
+                if (el) {
+                    if(insightsFilters.category === c) {
+                         el.className = "p-1.5 rounded bg-maroon text-white shadow-md transition-all";
+                    } else {
+                         el.className = "p-1.5 rounded bg-slate-100 text-slate-400 hover:text-slate-900 transition-all";
+                    }
+                }
+            });
+             const genders = ['all','Female','Male'];
+            genders.forEach(g => {
+                const id = g === 'all' ? 'ins-gender-all' : (g === 'Female' ? 'ins-gender-female' : 'ins-gender-male');
+                const el = document.getElementById(id);
+                if (el) {
+                    if(insightsFilters.gender === g) {
+                         el.className = "px-3 py-1 rounded-full border border-maroon text-[10px] font-bold uppercase bg-maroon text-white shadow-sm transition-all";
+                    } else {
+                         el.className = "px-3 py-1 rounded-full border border-slate-200 text-[10px] font-bold uppercase hover:bg-slate-50 text-slate-500 transition-all";
+                    }
+                }
+            });
+        }
+        function setDateRange(range) { analyticsFilters.range = range; updateAnalytics(); }
+
+        // --- MODAL & FORM LOGIC ---
+        async function handleCreateClient(e) {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(e.target));
+            // Custom Logic for Occupation
+            if (data.occupationCustom && document.getElementById('occupation-custom-enable')?.checked) {
+                data.occupation = data.occupationCustom;
+            }
+            const tok = localStorage.getItem('vb_token');
+            await fetch(`${API_URL}/clients`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: tok ? `Bearer ${tok}` : '' },
+                body: JSON.stringify(data)
+            });
+            closeModal('add-client-modal');
+            fetchClients();
+        }
+
+        // Toggle helpers
+        function toggleOccupationCustom() {
+            const cb = document.getElementById('occupation-custom-enable');
+            const el = document.getElementById('occupation-custom');
+            if (cb && el) el.classList.toggle('hidden', !cb.checked);
+        }
+        function toggleAthleticDetails(show) {
+            const el = document.getElementById('athletic-details');
+            if (el) el.classList.toggle('hidden', !show);
+        }
+        function toggleAthleticProfile() {
+            const el = document.getElementById('athletic-profile-section');
+            if (el) el.classList.toggle('hidden');
+        }
+
+        // Modal Utils
+        function filterClients(val) { renderSidebar(val); }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        
+        // Auth Logic
+        function decodeJwtPayload(tok) { try { const p = tok.split('.')[1]; return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/'))); } catch { return null; } }
+        async function ensureToken() {
+            const tok = localStorage.getItem('vb_token');
+            if (tok) return tok;
+            const res = await fetch(`${API_URL}/auth/refresh`, { method: 'POST', credentials: 'include' });
+            if (!res.ok) { return null; }
+            const data = await res.json();
+            if (data.token) { localStorage.setItem('vb_token', data.token); return data.token; }
+            return null;
+        }
+        function scheduleTokenRefresh() {
+            setInterval(() => ensureToken(), 10 * 60 * 1000);
+        }
+
+        // Weather
+        async function loadWeather() {
+            try {
+                const loc = await fetch('https://ipapi.co/json').then(r => r.json());
+                const city = loc.city || 'Ramallah';
+                document.getElementById('weather-city').innerText = city;
+                document.getElementById('weather-date').innerText = new Date().toLocaleString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+                if (loc.latitude) {
+                    const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current_weather=true`).then(r => r.json());
+                    document.getElementById('weather-temp').innerText = `${Math.round(w.current_weather.temperature)}°C`;
+                }
+            } catch (e) { console.log('Weather unavailable'); }
+        }
+    </script>
+</body>
+</html>
