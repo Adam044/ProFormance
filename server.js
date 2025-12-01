@@ -50,53 +50,79 @@ if (!DATABASE_URL) {
 }
 
 let pool;
+let db;
 
 // Stable Supabase PgBouncer (transaction pooler) settings
 function buildPool(cs) {
     return new Pool({
         connectionString: cs,
-        ssl: { rejectUnauthorized: false },
-        max: 5,
-        idleTimeoutMillis: 2000,
-        connectionTimeoutMillis: 2000,
+        ssl: { require: true, rejectUnauthorized: false },
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
         allowExitOnIdle: true,
+        keepAlive: true,
+        keepAliveInitialDelayMillis: 10000,
     });
 }
 
-async function tryPool(p) {
-    try {
-        await p.query("SELECT 1");
-        return true;
-    } catch (e) {
-        return e;
-    }
+function isTransient(err) {
+    const m = String(err && err.message || '');
+    const c = String(err && err.code || '');
+    return (
+        m.includes('Connection terminated') ||
+        m.includes('timeout') ||
+        m.includes('ECONNRESET') ||
+        m.includes('socket hang up') ||
+        c === 'ETIMEDOUT'
+    );
+}
+function makeDb(getPool) {
+    return {
+        async query(text, params) {
+            const p = getPool();
+            try {
+                return await p.query(text, params);
+            } catch (err) {
+                if (isTransient(err)) {
+                    try { await p.end(); } catch (_) {}
+                    pool = await ensurePool();
+                    if (!pool) throw err;
+                    return await getPool().query(text, params);
+                }
+                throw err;
+            }
+        }
+    };
 }
 
 // Auto-retry DB connection
 async function ensurePool() {
     if (!DATABASE_URL) return null;
-
-    for (let i = 1; i <= 3; i++) {
+    let lastErr = null;
+    for (let i = 1; i <= 5; i++) {
         const p = buildPool(DATABASE_URL);
         try {
             await p.query("SELECT 1");
-            console.log("Connected to Supabase (attempt " + i + ")");
+            console.log("Connected to database (attempt " + i + ")");
             return p;
         } catch (err) {
+            lastErr = err;
             console.warn("DB connect failed (attempt " + i + "):", err.message);
-            await new Promise(r => setTimeout(r, 400));
+            const delay = Math.min(2000 * i, 8000);
+            await new Promise(r => setTimeout(r, delay));
             try { await p.end(); } catch (_) {}
         }
     }
-
     console.error("All DB connection attempts failed.");
+    if (lastErr) console.error(lastErr);
     return null;
 }
 
 async function initDb() {
     if (!pool) return;
 
-    await pool.query(`
+    await db.query(`
         CREATE TABLE IF NOT EXISTS clients (
             id UUID PRIMARY KEY,
             name TEXT NOT NULL,
@@ -127,7 +153,7 @@ async function initDb() {
         );
     `);
 
-    await pool.query(`
+    await db.query(`
         CREATE TABLE IF NOT EXISTS sessions (
             id UUID PRIMARY KEY,
             client_id UUID REFERENCES clients(id) ON DELETE CASCADE,
@@ -144,7 +170,7 @@ async function initDb() {
         );
     `);
 
-    await pool.query(`
+    await db.query(`
         CREATE TABLE IF NOT EXISTS auth_tokens (
             id UUID PRIMARY KEY,
             user_id UUID REFERENCES clients(id) ON DELETE CASCADE,
@@ -156,7 +182,7 @@ async function initDb() {
         );
     `);
 
-    await pool.query(`
+    await db.query(`
         CREATE TABLE IF NOT EXISTS payments (
             id UUID PRIMARY KEY,
             client_id UUID REFERENCES clients(id) ON DELETE SET NULL,
@@ -266,7 +292,7 @@ async function storeRefresh({ token, userId, role }) {
     const id = uuidv4();
     const expires = new Date(Date.now() + REFRESH_TOKEN_TTL * 1000);
 
-    await pool.query(
+    await db.query(
         `INSERT INTO auth_tokens (id, user_id, role, token_hash, expires_at)
          VALUES ($1, $2, $3, $4, $5)`,
          [id, userId || null, role, hashToken(token), expires]
@@ -276,14 +302,14 @@ async function storeRefresh({ token, userId, role }) {
 }
 
 async function revokeRefresh(token) {
-    await pool.query(
+    await db.query(
         "UPDATE auth_tokens SET revoked = TRUE WHERE token_hash = $1",
         [hashToken(token)]
     );
 }
 
 async function validateRefresh(token) {
-    const { rows } = await pool.query(
+    const { rows } = await db.query(
         `SELECT user_id, role, expires_at, revoked
          FROM auth_tokens
          WHERE token_hash = $1`,
@@ -352,6 +378,7 @@ app.get('/patient', (req, res) => {
         pool = await ensurePool();
 
         if (pool) {
+            db = makeDb(() => pool);
             const security = {
                 signJwt,
                 verifyJwt,
@@ -364,10 +391,10 @@ app.get('/patient', (req, res) => {
                 REFRESH_TOKEN_TTL
             };
 
-            app.use('/api/auth', createAuthRoutes(pool, ADMIN, security));
-            app.use('/api/clients', authMiddleware, requireAdminForWrite, createClientRoutes(pool));
-            app.use('/api/clients', authMiddleware, requireAdminForWrite, createSessionRoutes(pool));
-            app.use('/api/payments', authMiddleware, requireAdminForWrite, createPaymentRoutes(pool));
+            app.use('/api/auth', createAuthRoutes(db, ADMIN, security));
+            app.use('/api/clients', authMiddleware, requireAdminForWrite, createClientRoutes(db));
+            app.use('/api/clients', authMiddleware, requireAdminForWrite, createSessionRoutes(db));
+            app.use('/api/payments', authMiddleware, requireAdminForWrite, createPaymentRoutes(db));
 
             await initDb();
 
