@@ -13,6 +13,10 @@ module.exports = function createSessionRoutes(pool) {
         id, req.params.id, date, req.body.title, req.body.note, 'session', Number(req.body.progress||0), req.body.paymentStatus||'on_hold', req.body.currency||'$', req.body.paymentType||'cash', Number(req.body.amount||0)
       ]);
       await pool.query('UPDATE clients SET last_updated = $1 WHERE id = $2', [new Date(), req.params.id]);
+      await pool.query(`INSERT INTO payments (id, client_id, session_id, date, amount, currency, status, method, reference, note)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, [
+        uuidv4(), req.params.id, id, new Date(date), Number(req.body.amount||0), req.body.currency||'$', req.body.paymentStatus||'on_hold', req.body.paymentType||'cash', null, req.body.note || null
+      ]);
       const { rows } = await pool.query('SELECT * FROM sessions WHERE id = $1', [id]);
       res.json(rows[0]);
     } catch (err) { console.error(err); res.status(500).json({ message: 'Server error' }); }
@@ -28,6 +32,20 @@ module.exports = function createSessionRoutes(pool) {
       values.push(req.params.sessionId, req.params.id);
       const sql = `UPDATE sessions SET ${sets.join(', ')} WHERE id = $${fields.length+1} AND client_id = $${fields.length+2} RETURNING *`;
       const { rows } = await pool.query(sql, values);
+      const s = rows[0];
+      if (s) {
+        const { rows: existing } = await pool.query('SELECT id FROM payments WHERE session_id = $1', [req.params.sessionId]);
+        if (existing[0]) {
+          await pool.query(`UPDATE payments SET date = $1, amount = $2, currency = $3, status = $4, method = $5, note = $6 WHERE session_id = $7`, [
+            new Date(s.date), Number(s.amount||0), s.currency || '$', s.payment_status || 'on_hold', s.payment_type || 'cash', s.note || null, req.params.sessionId
+          ]);
+        } else {
+          await pool.query(`INSERT INTO payments (id, client_id, session_id, date, amount, currency, status, method, reference, note)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, [
+            uuidv4(), req.params.id, req.params.sessionId, new Date(s.date), Number(s.amount||0), s.currency || '$', s.payment_status || 'on_hold', s.payment_type || 'cash', null, s.note || null
+          ]);
+        }
+      }
       res.json(rows[0]);
     } catch (err) { console.error(err); res.status(500).json({ message: 'Server error' }); }
   });
@@ -35,6 +53,7 @@ module.exports = function createSessionRoutes(pool) {
   router.delete('/:id/sessions/:sessionId', async (req, res) => {
     try {
       await pool.query('DELETE FROM sessions WHERE id = $1 AND client_id = $2', [req.params.sessionId, req.params.id]);
+      await pool.query('DELETE FROM payments WHERE session_id = $1', [req.params.sessionId]);
       res.json({ success: true });
     } catch (err) { console.error(err); res.status(500).json({ message: 'Server error' }); }
   });

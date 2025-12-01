@@ -40,19 +40,18 @@
         /* SVG Body Map - EXACTLY like User Dashboard */
         .body-part { 
             fill: #e2e8f0; 
-            stroke: #e2e8f0; /* Solid stroke matches fill */
-            transition: all 0.3s ease; 
+            stroke: #e2e8f0;
+            transition: fill 0.2s ease, stroke 0.2s ease; 
             cursor: pointer; 
+            will-change: fill, stroke;
         }
         .body-part:hover { 
             fill: #a78bfa; 
             stroke: #a78bfa;
-            filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.5)); 
         }
         .body-part.active-high { 
             fill: #ef4444; 
             stroke: #ef4444; 
-            filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.4)); 
         }
         .body-part.active-low { 
             fill: #fbbf24; 
@@ -143,18 +142,19 @@
                     
                     <div class="flex items-center gap-2">
                         <select id="bodymap-session" onchange="changeBodyMapScope(this.value)" class="text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-maroon font-bold text-slate-600 max-w-[140px]"></select>
-                         <button onclick="startSession()" class="text-xs font-bold bg-maroon text-white hover:bg-slate-900 px-3 py-2 rounded-lg shadow-md transition-colors flex items-center gap-1">
+                         <button id="start-btn" onclick="startSession()" class="text-xs font-bold bg-maroon text-white hover:bg-slate-900 px-3 py-2 rounded-lg shadow-md transition-colors flex items-center gap-1">
                             <i data-lucide="play" class="w-3 h-3 fill-current"></i> Start
                         </button>
                      </div>
                 </div>
                 
                 <div class="relative flex-grow flex items-center justify-center bg-[#f8f9fa] rounded-2xl border border-slate-200 p-6 shadow-inner min-h-[450px]">
-                    <div id="svg-container" class="h-[400px] w-full flex justify-center drop-shadow-xl"></div>
+                    <div id="svg-container" class="h-[400px] w-full flex justify-center"></div>
                     
                     <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]"></span> Injury</span>
-                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Monitor</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Acute</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Subacute</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Chronic</span>
                     </div>
                 </div>
             </div>
@@ -213,7 +213,7 @@
         </section>
     </main>
 
-    <div id="bodymap-modal" onclick="if(event.target===this) closeModal('bodymap-modal')" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in">
+    <div id="bodymap-modal" onclick="if(event.target===this) closeModal('bodymap-modal')" class="hidden fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 animate-in">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 border-t-8 border-maroon max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <div>
@@ -227,7 +227,7 @@
                 <input type="hidden" id="map-region-id">
                 
                 <div>
-                    <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Specific Structure</label>
+                    <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Location of Injury</label>
                     <select id="map-specific" class="input-pro"></select>
                 </div>
 
@@ -241,7 +241,6 @@
                         <select id="map-mechanism" class="input-pro">
                             <option value="direct_blow">Direct Blow</option>
                             <option value="overuse">Overuse</option>
-                            <option value="strain">Strain</option>
                         </select>
                     </div>
                 </div>
@@ -258,19 +257,51 @@
                     <div>
                         <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Condition</label>
                         <select id="map-severity-select" class="input-pro">
-                            <option value="acute">Acute / High</option>
-                            <option value="subacute">Monitor / Low</option>
+                            <option value="acute">Acute (Red)</option>
+                            <option value="subacute">Subacute (Yellow)</option>
+                            <option value="chronic">Chronic (Blue)</option>
                         </select>
                     </div>
                     <div>
                          <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Pain Type</label>
                          <select id="map-pain-type" class="input-pro">
-                            <option value="radicular">Radicular</option>
-                            <option value="sharp">Sharp</option>
-                            <option value="dull">Dull/Ache</option>
-                            <option value="other">Other</option>
+                            <option value="radicular">Radicular pain</option>
+                            <option value="electric">Electric pain</option>
+                            <option value="tingling">Tingling pain</option>
+                            <option value="numbness">Numbness</option>
+                            <option value="burning">Burning pain</option>
+                            <option value="cramping">Cramping</option>
+                            <option value="shooting">Shooting pain</option>
+                            <option value="other">Other (free entry)</option>
                          </select>
+                         <input id="map-pain-other" class="input-pro mt-2" placeholder="Describe pain..." style="display:none;">
                     </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Symptoms</label>
+                    <input id="map-symptoms" class="input-pro" placeholder="e.g., headache">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">24 Hour Pattern</label>
+                        <select id="map-pattern" class="input-pro">
+                            <option value="morning">Morning</option>
+                            <option value="day">Day</option>
+                            <option value="night">Night</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Aggravating Factors</label>
+                    <textarea id="map-aggravating" rows="2" class="input-pro resize-none" placeholder="What makes it worse..."></textarea>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase ml-1 mb-1 block">Easing Factors</label>
+                    <textarea id="map-easing" rows="2" class="input-pro resize-none" placeholder="What makes it better..."></textarea>
                 </div>
 
                 <div>
@@ -278,11 +309,7 @@
                     <textarea id="map-note" rows="3" class="input-pro resize-none" placeholder="Assessment notes..."></textarea>
                 </div>
 
-                <input id="map-symptoms" type="hidden">
-                <input id="map-pain-other" type="hidden">
-                <input id="map-pattern" type="hidden">
-                <input id="map-aggravating" type="hidden">
-                <input id="map-easing" type="hidden">
+                
 
                 <div class="flex justify-between items-center pt-4 border-t border-slate-100 mt-2">
                     <button type="button" onclick="handleClearMap()" class="text-red-400 text-xs font-bold hover:text-red-600 uppercase tracking-wide">Clear Data</button>
@@ -295,7 +322,7 @@
         </div>
     </div>
 
-    <div id="session-modal" onclick="if(event.target===this) closeModal('session-modal')" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in">
+    <div id="session-modal" onclick="if(event.target===this) closeModal('session-modal')" class="hidden fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 animate-in">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 md:p-8 max-h-[90vh] overflow-y-auto border border-white/50">
             <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
                 <h3 class="text-2xl font-bold text-slate-900 display-font uppercase" id="session-modal-title">Log Session</h3>
@@ -369,7 +396,7 @@
         </div>
     </div>
 
-    <div id="info-modal" onclick="if(event.target===this) closeModal('info-modal')" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in">
+    <div id="info-modal" onclick="if(event.target===this) closeModal('info-modal')" class="hidden fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 animate-in">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-xl p-6 md:p-8 max-h-[85vh] overflow-y-auto border border-white/50">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-bold text-slate-900 display-font uppercase">Patient Profile</h3>
@@ -391,7 +418,7 @@
             const id = params.get('id');
             if (!id) { window.location.href = 'violet_dashboard.html'; return; }
             fetchClient(id);
-            lucide.createIcons();
+            throttleIcons();
             
             const input = document.getElementById('schedule-date');
             const cb = document.getElementById('no-appointment');
@@ -475,12 +502,14 @@
                     filterSel.disabled = true;
                     window.bodyMapScope = null;
                 } else {
-                    const options = sessions.map(s => `<option value="${s.id}">${new Date(s.date).toLocaleDateString()} • ${s.title}</option>`).join('');
+                    const options = sessions.map(s => `<option value="${s.id}">${s.title}</option>`).join('');
                     filterSel.innerHTML = options;
                     if (!window.bodyMapScope) { window.bodyMapScope = sessions[0].id; }
                     filterSel.disabled = false;
                     filterSel.value = window.bodyMapScope;
                 }
+            const startBtn = document.getElementById('start-btn');
+            if (startBtn) { startBtn.classList.toggle('hidden', sessions.length > 0); }
             }
             renderBodyMap();
 
@@ -535,18 +564,18 @@
                 </div>
             `).join('');
 
-            lucide.createIcons();
+            throttleIcons();
         }
 
         // --- BODY MAP LOGIC ---
         const BODY_REGIONS = {
-            'head': ['Cervical Spine', 'Head', 'TMJ'],
-            'torso': ['Thoracic Spine', 'Ribcage', 'Abdominals', 'Lumbar Spine', 'SI Joint'],
-            'hips': ['Hips', 'Glutes', 'Groin'],
-            'left-arm': ['Shoulder (L)', 'Elbow (L)', 'Wrist (L)', 'Hand (L)'],
-            'right-arm': ['Shoulder (R)', 'Elbow (R)', 'Wrist (R)', 'Hand (R)'],
-            'left-leg': ['Quad (L)', 'Hamstring (L)', 'Knee (L)', 'Calf (L)', 'Ankle (L)'],
-            'right-leg': ['Quad (R)', 'Hamstring (R)', 'Knee (R)', 'Calf (R)', 'Ankle (R)']
+            'head': ['Cervical spine'],
+            'torso': ['Thoracic spine', 'Ribcage', 'Abdominals', 'Lumbar spine'],
+            'hips': ['Hips', 'SI joint'],
+            'left-arm': ['Shoulder', 'Elbow', 'Wrist'],
+            'right-arm': ['Shoulder', 'Elbow', 'Wrist'],
+            'left-leg': ['Knee', 'Ankle'],
+            'right-leg': ['Knee', 'Ankle']
         };
 
         function getCurrentBodyMap() {
@@ -572,6 +601,7 @@
                 const sev = data[id].severity;
                 if (sev === 'high' || sev === 'acute') return 'body-part active-high';
                 if (sev === 'low' || sev === 'subacute') return 'body-part active-low';
+                if (sev === 'chronic') return 'body-part active-chronic';
                 return 'body-part';
             };
             // Same geometric paths as User Dashboard
@@ -593,7 +623,7 @@
             document.getElementById('map-region-title').innerText = regionName;
             document.getElementById('map-region-id').value = regionId;
             const select = document.getElementById('map-specific');
-            select.innerHTML = BODY_REGIONS[regionId].map(part => `<option>${part}</option>`).join('');
+            select.innerHTML = (BODY_REGIONS[regionId] || []).map(part => `<option>${part}</option>`).join('');
             
             const existing = getCurrentBodyMap()[regionId];
             if (existing) {
@@ -607,13 +637,31 @@
                 document.getElementById('map-vas').value = typeof existing.vas !== 'undefined' ? existing.vas : 0;
                 document.getElementById('map-vas-val').innerText = document.getElementById('map-vas').value;
                 document.getElementById('map-pain-type').value = existing.painType || 'radicular';
+                document.getElementById('map-pain-other').value = existing.painOther || '';
+                document.getElementById('map-symptoms').value = existing.symptoms || '';
+                document.getElementById('map-pattern').value = existing.pattern || 'morning';
+                document.getElementById('map-aggravating').value = existing.aggravating || '';
+                document.getElementById('map-easing').value = existing.easing || '';
             } else {
                 document.getElementById('map-note').value = '';
                 document.getElementById('map-severity-select').value = 'acute';
                 document.getElementById('map-injury-date').value = '';
                 document.getElementById('map-vas').value = 0;
                 document.getElementById('map-vas-val').innerText = '0';
+                document.getElementById('map-pain-type').value = 'radicular';
+                document.getElementById('map-pain-other').value = '';
+                document.getElementById('map-symptoms').value = '';
+                document.getElementById('map-pattern').value = 'morning';
+                document.getElementById('map-aggravating').value = '';
+                document.getElementById('map-easing').value = '';
             }
+            const painSel = document.getElementById('map-pain-type');
+            function updatePainOtherVisibility(){
+                const show = painSel.value === 'other';
+                document.getElementById('map-pain-other').style.display = show ? '' : 'none';
+            }
+            painSel.onchange = updatePainOtherVisibility;
+            updatePainOtherVisibility();
             modal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
@@ -628,6 +676,11 @@
             const mechanism = document.getElementById('map-mechanism').value || null;
             const vas = Number(document.getElementById('map-vas').value || 0);
             const painType = document.getElementById('map-pain-type').value || null;
+            const painOther = document.getElementById('map-pain-other').value || null;
+            const symptoms = document.getElementById('map-symptoms').value || null;
+            const pattern = document.getElementById('map-pattern').value || null;
+            const aggravating = document.getElementById('map-aggravating').value || null;
+            const easing = document.getElementById('map-easing').value || null;
             
             const scope = window.bodyMapScope;
             const url = `${API_URL}/clients/${selectedClient.id}/sessions/${scope}/bodymap`;
@@ -635,7 +688,7 @@
             await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: tok ? `Bearer ${tok}` : '' },
-                body: JSON.stringify({ region, note, severity, specificPart, injuryDate, mechanism, vas, painType })
+                body: JSON.stringify({ region, note, severity, specificPart, injuryDate, mechanism, vas, painType, painOther, symptoms, pattern, aggravating, easing })
             });
             closeModal('bodymap-modal');
             fetchClient(selectedClient.id);
@@ -837,6 +890,14 @@
         function calculateAge(dob) { return Math.abs(new Date(Date.now() - new Date(dob).getTime()).getUTCFullYear() - 1970); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.body.style.overflow = ''; }
         function scheduleTokenRefresh() { setInterval(() => ensureToken(), 10 * 60 * 1000); }
+
+        let _iconsTs = 0;
+        function throttleIcons() {
+            const now = Date.now();
+            if (now - _iconsTs < 800) return;
+            _iconsTs = now;
+            lucide.createIcons();
+        }
     </script>
 </body>
 </html>
