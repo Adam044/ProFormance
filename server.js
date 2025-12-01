@@ -80,7 +80,12 @@ function isTransient(err) {
 function makeDb(getPool) {
     return {
         async query(text, params) {
-            const p = getPool();
+            let p = getPool();
+            if (!p) {
+                pool = await ensurePool();
+                p = getPool();
+                if (!p) throw new Error('service_unavailable');
+            }
             try {
                 return await p.query(text, params);
             } catch (err) {
@@ -371,56 +376,46 @@ app.get('/violet', (req, res) => {
 app.get('/patient', (req, res) => {
     res.sendFile(path.join(VIEWS_DIR, 'patient.html'));
 });
+app.get('/insights', (req, res) => {
+    res.sendFile(path.join(VIEWS_DIR, 'revenue_insights.html'));
+});
 
 // Boot the server
 (async function boot() {
     try {
-        pool = await ensurePool();
+        db = makeDb(() => pool);
+        const security = {
+            signJwt,
+            verifyJwt,
+            newRefreshToken,
+            storeRefresh,
+            validateRefresh,
+            revokeRefresh,
+            parseCookies,
+            ACCESS_TOKEN_TTL,
+            REFRESH_TOKEN_TTL
+        };
 
-        if (pool) {
-            db = makeDb(() => pool);
-            const security = {
-                signJwt,
-                verifyJwt,
-                newRefreshToken,
-                storeRefresh,
-                validateRefresh,
-                revokeRefresh,
-                parseCookies,
-                ACCESS_TOKEN_TTL,
-                REFRESH_TOKEN_TTL
-            };
-
-            app.use('/api/auth', createAuthRoutes(db, ADMIN, security));
-            app.use('/api/clients', authMiddleware, requireAdminForWrite, createClientRoutes(db));
-            app.use('/api/clients', authMiddleware, requireAdminForWrite, createSessionRoutes(db));
-            app.use('/api/payments', authMiddleware, requireAdminForWrite, createPaymentRoutes(db));
-
-            await initDb();
-
-            app.listen(PORT, () =>
-                console.log(`API Server running on http://localhost:${PORT}`)
-            );
-        } else {
-            app.use('/api', (req, res) => {
-                res.status(503).json({
-                    message: 'Database not configured. Set DATABASE_URL in Backend/.env'
-                });
-            });
-
-            app.listen(PORT, () =>
-                console.log(`API Server running (no DB) on http://localhost:${PORT}`)
-            );
-        }
-    } catch (err) {
-        console.error('Failed to start server', err);
-
-        app.use('/api', (req, res) => {
-            res.status(503).json({ message: 'Server startup error. Check logs.' });
+        app.use('/api/auth', createAuthRoutes(db, ADMIN, security));
+        app.use('/api/clients', authMiddleware, requireAdminForWrite, createClientRoutes(db));
+        app.use('/api/clients', authMiddleware, requireAdminForWrite, createSessionRoutes(db));
+        app.use('/api/payments', authMiddleware, requireAdminForWrite, createPaymentRoutes(db));
+        app.get('/api/health', (req, res) => {
+            res.json({ connected: !!pool });
         });
 
         app.listen(PORT, () =>
-            console.log(`API Server running (startup error) on http://localhost:${PORT}`)
+            console.log(`API Server running on http://localhost:${PORT}`)
+        );
+
+        try {
+            pool = await ensurePool();
+            await initDb();
+        } catch (_) {}
+    } catch (err) {
+        console.error('Failed to start server', err);
+        app.listen(PORT, () =>
+            console.log(`API Server running on http://localhost:${PORT}`)
         );
     }
 })();

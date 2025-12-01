@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Revenue Insights | Violette Banda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --c-maroon:#7a2747; --c-olive:#7a8a41; --c-dark:#1a1a1a; }
+        body { font-family:'Manrope',sans-serif; background:#f8f9fa; }
+        h1,h2,h3,.display-font { font-family:'Oswald',sans-serif; letter-spacing:-0.02em; }
+        .bg-maroon { background-color:var(--c-maroon); } .text-maroon { color:var(--c-maroon); }
+        .bg-olive { background-color:var(--c-olive); } .text-olive { color:var(--c-olive); }
+        .input-pro { width:100%; padding:.6rem .75rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:.75rem; outline:none; transition:.2s; font-weight:600; color:#1e293b; font-size:.9rem; }
+        .input-pro:focus { border-color:var(--c-maroon); background:#fff; box-shadow:0 0 0 3px rgba(122,39,71,.1); }
+        .btn-filter { padding:.35rem .6rem; font-size:.75rem; font-weight:700; border-radius:.5rem; transition:.2s; white-space:nowrap; }
+        .btn-filter.active { background:#1e293b; color:#fff; } .btn-filter.inactive { background:transparent; color:#64748b; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col text-slate-800">
+    <nav class="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 flex justify-between items-center px-4 md:px-6">
+        <div class="flex items-center gap-3">
+            <img src="/images/violet-logo.png" class="h-6 md:h-7 w-auto object-contain">
+            <div class="h-6 w-px bg-slate-200 hidden md:block"></div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest hidden md:block">Revenue Insights</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="/violet" class="px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-bold uppercase">Dashboard</a>
+            <button id="logoutBtn" class="p-2 text-slate-400 hover:text-maroon bg-slate-50 rounded-lg"><i data-lucide="log-out" class="w-5 h-5"></i></button>
+        </div>
+    </nav>
+
+    <main class="flex-grow p-4 md:p-8 space-y-6">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <p class="text-[10px] font-bold text-olive uppercase tracking-widest mb-1">Finance</p>
+                <h2 class="text-3xl md:text-5xl font-bold text-slate-900 display-font uppercase">Deep Insights</h2>
+            </div>
+            <div class="bg-white rounded-xl border border-slate-200 p-3 flex items-center gap-3 shadow-sm w-full md:w-auto">
+                <div class="flex gap-1 bg-slate-100 p-1 rounded-lg overflow-x-auto">
+                    <button id="r7"  class="btn-filter inactive">7d</button>
+                    <button id="r30" class="btn-filter active">30d</button>
+                    <button id="r90" class="btn-filter inactive">90d</button>
+                    <button id="r180" class="btn-filter inactive">180d</button>
+                </div>
+                <select id="currencySel" class="input-pro w-28">
+                    <option value="">All</option>
+                    <option value="$">$</option>
+                    <option value="ILS">ILS</option>
+                </select>
+                <select id="granSel" class="input-pro w-32">
+                    <option value="day">By Day</option>
+                    <option value="week">By Week</option>
+                    <option value="month" selected>By Month</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-maroon text-white flex items-center justify-center"><i data-lucide="dollar-sign" class="w-6 h-6"></i></div>
+                <div><p id="kpi-gross" class="text-3xl font-bold text-slate-900 display-font">0</p><p class="text-[10px] text-slate-400 font-bold uppercase">Gross Revenue</p></div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-olive text-white flex items-center justify-center"><i data-lucide="check-circle" class="w-6 h-6"></i></div>
+                <div><p id="kpi-paid" class="text-3xl font-bold text-slate-900 display-font">0</p><p class="text-[10px] text-slate-400 font-bold uppercase">Payments</p></div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center"><i data-lucide="timer" class="w-6 h-6"></i></div>
+                <div><p id="kpi-pending" class="text-3xl font-bold text-slate-900 display-font">0</p><p class="text-[10px] text-slate-400 font-bold uppercase">Pending Count</p></div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-slate-800 text-white flex items-center justify-center"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div>
+                <div><p id="kpi-balance" class="text-3xl font-bold text-slate-900 display-font">0</p><p class="text-[10px] text-slate-400 font-bold uppercase">Outstanding</p></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-[10px] text-slate-400 font-bold uppercase">Best Day</p>
+                <p id="hl-best-day" class="text-xl font-bold text-slate-900">—</p>
+                <p id="hl-best-day-amt" class="text-sm text-olive font-bold">—</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-[10px] text-slate-400 font-bold uppercase">Best Month</p>
+                <p id="hl-best-month" class="text-xl font-bold text-slate-900">—</p>
+                <p id="hl-best-month-amt" class="text-sm text-olive font-bold">—</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-[10px] text-slate-400 font-bold uppercase">Average / Day</p>
+                <p id="hl-avg-day" class="text-xl font-bold text-slate-900">—</p>
+                <p id="hl-growth" class="text-sm text-slate-500 font-bold">—</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-[10px] text-slate-400 font-bold uppercase">Top Method</p>
+                <p id="hl-top-method" class="text-xl font-bold text-slate-900">—</p>
+                <p id="hl-top-method-share" class="text-sm text-olive font-bold">—</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div class="xl:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-900 text-lg display-font uppercase">Revenue Trend</h3>
+                    <div class="flex items-center gap-2">
+                        <div class="text-[10px] font-bold uppercase text-slate-400" id="rangeLabel">Last 30 days</div>
+                        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                            <button id="trend-paid" class="btn-filter active">Paid</button>
+                            <button id="trend-all" class="btn-filter inactive">All</button>
+                        </div>
+                        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                            <button id="smooth-off" class="btn-filter active">Raw</button>
+                            <button id="smooth-on" class="btn-filter inactive">Smooth</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative h-64 md:h-80">
+                    <canvas id="trendChart" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-slate-900 text-lg display-font uppercase">By Method</h3>
+                    <div class="flex items-center gap-2">
+                        <div class="text-[10px] font-bold uppercase text-slate-400" id="currencyLabel">All</div>
+                        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                            <button id="method-paid" class="btn-filter active">Paid</button>
+                            <button id="method-all" class="btn-filter inactive">All</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative h-64 md:h-80">
+                    <canvas id="methodChart" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-900 text-lg display-font uppercase">Progress</h3>
+                <div class="text-[10px] font-bold uppercase text-slate-400">Cumulative</div>
+            </div>
+            <div class="relative h-64 md:h-80">
+                <canvas id="progressChart" class="absolute inset-0 w-full h-full"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+            <h3 class="font-bold text-slate-900 text-lg display-font uppercase mb-2">Summary</h3>
+            <p id="narrative" class="text-sm text-slate-700"></p>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-900 text-lg display-font uppercase">Top Clients</h3>
+                <div class="text-[10px] font-bold uppercase text-slate-400">By Revenue</div>
+            </div>
+            <div id="topClients" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = `${location.origin}/api`;
+        let trendChart, methodChart, progressChart;
+        let statusFilterTrend = 'paid';
+        let statusFilterMethod = 'paid';
+        let smoothOn = false;
+
+        window.onload = async () => {
+            document.getElementById('logoutBtn').onclick = () => { localStorage.removeItem('vb_user'); window.location.href = 'index.html'; };
+            ['r7','r30','r90','r180'].forEach(id => document.getElementById(id).onclick = () => setRange(id));
+            await ensureToken();
+            attachFilters();
+            await loadInsights();
+            lucide.createIcons();
+            scheduleTokenRefresh();
+        };
+
+        function attachFilters() {
+            document.getElementById('trend-paid').onclick = () => { statusFilterTrend = 'paid'; applyTrendFilterStyles(); loadInsights(); };
+            document.getElementById('trend-all').onclick = () => { statusFilterTrend = 'all'; applyTrendFilterStyles(); loadInsights(); };
+            document.getElementById('smooth-off').onclick = () => { smoothOn = false; applySmoothStyles(); loadInsights(); };
+            document.getElementById('smooth-on').onclick = () => { smoothOn = true; applySmoothStyles(); loadInsights(); };
+            document.getElementById('method-paid').onclick = () => { statusFilterMethod = 'paid'; applyMethodFilterStyles(); loadInsights(); };
+            document.getElementById('method-all').onclick = () => { statusFilterMethod = 'all'; applyMethodFilterStyles(); loadInsights(); };
+        }
+        function applyTrendFilterStyles() {
+            document.getElementById('trend-paid').className = `btn-filter ${statusFilterTrend==='paid'?'active':'inactive'}`;
+            document.getElementById('trend-all').className = `btn-filter ${statusFilterTrend==='all'?'active':'inactive'}`;
+        }
+        function applyMethodFilterStyles() {
+            document.getElementById('method-paid').className = `btn-filter ${statusFilterMethod==='paid'?'active':'inactive'}`;
+            document.getElementById('method-all').className = `btn-filter ${statusFilterMethod==='all'?'active':'inactive'}`;
+        }
+        function applySmoothStyles() {
+            document.getElementById('smooth-off').className = `btn-filter ${!smoothOn?'active':'inactive'}`;
+            document.getElementById('smooth-on').className = `btn-filter ${smoothOn?'active':'inactive'}`;
+        }
+
+        function decodeJwtPayload(tok) { try { const p = tok.split('.')[1]; return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/'))); } catch { return null; } }
+        async function ensureToken() {
+            const tok = localStorage.getItem('vb_token');
+            if (tok) return tok;
+            const res = await fetch(`${API_URL}/auth/refresh`, { method:'POST', credentials:'include' });
+            if (!res.ok) return null;
+            const data = await res.json();
+            if (data.token) { localStorage.setItem('vb_token', data.token); return data.token; }
+            return null;
+        }
+        function scheduleTokenRefresh() { setInterval(() => ensureToken(), 10 * 60 * 1000); }
+
+        let rangeDays = 30;
+        function setRange(id) {
+            rangeDays = id === 'r7' ? 7 : id === 'r90' ? 90 : id === 'r180' ? 180 : 30;
+            ['r7','r30','r90','r180'].forEach(r => {
+                const el = document.getElementById(r);
+                el.className = `btn-filter ${r === id ? 'active' : 'inactive'}`;
+            });
+            document.getElementById('rangeLabel').innerText = `Last ${rangeDays} days`;
+            loadInsights();
+        }
+
+        function buildRange() {
+            const to = new Date();
+            const from = new Date(to.getTime() - rangeDays*24*60*60*1000);
+            return { from: from.toISOString(), to: to.toISOString() };
+        }
+
+        async function loadInsights() {
+            const tok = localStorage.getItem('vb_token');
+            const cur = document.getElementById('currencySel').value;
+            const gran = document.getElementById('granSel').value;
+
+            const q = buildRange();
+            const qs = (obj) => Object.entries(obj).map(([k,v]) => v ? `${k}=${encodeURIComponent(v)}` : '').filter(Boolean).join('&');
+
+            let res = await fetch(`${API_URL}/payments/summary?${qs({ from:q.from, to:q.to, currency:cur })}`, { headers: { Authorization: tok ? `Bearer ${tok}` : '' } });
+            if (res.status === 401) { await ensureToken(); const t2 = localStorage.getItem('vb_token'); res = await fetch(`${API_URL}/payments/summary?${qs({ from:q.from, to:q.to, currency:cur })}`, { headers: { Authorization: t2 ? `Bearer ${t2}` : '' } }); }
+            const sum = res.ok ? await res.json() : {};
+            document.getElementById('kpi-gross').innerText = Number(sum.gross||0).toLocaleString();
+            document.getElementById('kpi-paid').innerText = Number(sum.countPaid||0).toLocaleString();
+            document.getElementById('kpi-pending').innerText = Number(sum.pendingCount||0).toLocaleString();
+            document.getElementById('kpi-balance').innerText = Number(sum.balance||0).toLocaleString();
+            document.getElementById('currencyLabel').innerText = cur || 'All';
+
+            const tsRes = await fetch(`${API_URL}/payments/timeseries?${qs({ from:q.from, to:q.to, currency:cur, granularity:gran, status:statusFilterTrend })}`, { headers: { Authorization: localStorage.getItem('vb_token') ? `Bearer ${localStorage.getItem('vb_token')}` : '' } });
+            const ts = tsRes.ok ? await tsRes.json() : [];
+            const labels = Array.isArray(ts) ? ts.map(r => new Date(r.bucket).toLocaleDateString(undefined, { year:'numeric', month:'short', day: gran==='day' ? 'numeric' : undefined })) : [];
+            const values = Array.isArray(ts) ? ts.map(r => Number(r.total||0)) : [];
+            renderTrend(labels, values);
+
+            const dayRes = await fetch(`${API_URL}/payments/timeseries?${qs({ from:q.from, to:q.to, currency:cur, granularity:'day', status:statusFilterTrend })}`, { headers: { Authorization: localStorage.getItem('vb_token') ? `Bearer ${localStorage.getItem('vb_token')}` : '' } });
+            const tsDay = dayRes.ok ? await dayRes.json() : [];
+            const monthRes = await fetch(`${API_URL}/payments/timeseries?${qs({ from:q.from, to:q.to, currency:cur, granularity:'month', status:statusFilterTrend })}`, { headers: { Authorization: localStorage.getItem('vb_token') ? `Bearer ${localStorage.getItem('vb_token')}` : '' } });
+            const tsMonth = monthRes.ok ? await monthRes.json() : [];
+
+            const mRes = await fetch(`${API_URL}/payments/breakdown/methods?${qs({ from:q.from, to:q.to, currency:cur, status:statusFilterMethod })}`, { headers: { Authorization: localStorage.getItem('vb_token') ? `Bearer ${localStorage.getItem('vb_token')}` : '' } });
+            const methods = mRes.ok ? await mRes.json() : [];
+            renderMethods(methods.map(m => m.method), methods.map(m => Number(m.total||0)));
+
+            const topRes = await fetch(`${API_URL}/payments/top-clients?${qs({ from:q.from, to:q.to, currency:cur, limit:12 })}`, { headers: { Authorization: localStorage.getItem('vb_token') ? `Bearer ${localStorage.getItem('vb_token')}` : '' } });
+            const tops = topRes.ok ? await topRes.json() : [];
+            renderTopClients(Array.isArray(tops) ? tops : []);
+
+            const cumulative = values.reduce((acc, v, i) => { acc.push((acc[i-1]||0) + v); return acc; }, []);
+            renderProgress(labels, cumulative);
+
+            const bestDayIdx = Array.isArray(tsDay) && tsDay.length ? tsDay.reduce((mi, r, i, a) => (Number(r.total||0) > Number(a[mi].total||0) ? i : mi), 0) : -1;
+            const bestDayAmt = bestDayIdx >= 0 ? Number(tsDay[bestDayIdx].total||0) : 0;
+            const bestDayLabel = bestDayIdx >= 0 ? new Date(tsDay[bestDayIdx].bucket).toLocaleDateString(undefined, { weekday:'long', month:'short', day:'numeric' }) : '—';
+            document.getElementById('hl-best-day').innerText = bestDayLabel;
+            document.getElementById('hl-best-day-amt').innerText = bestDayAmt.toLocaleString();
+
+            const bestMonthIdx = Array.isArray(tsMonth) && tsMonth.length ? tsMonth.reduce((mi, r, i, a) => (Number(r.total||0) > Number(a[mi].total||0) ? i : mi), 0) : -1;
+            const bestMonthAmt = bestMonthIdx >= 0 ? Number(tsMonth[bestMonthIdx].total||0) : 0;
+            const bestMonthLabel = bestMonthIdx >= 0 ? new Date(tsMonth[bestMonthIdx].bucket).toLocaleDateString(undefined, { month:'long', year:'numeric' }) : '—';
+            document.getElementById('hl-best-month').innerText = bestMonthLabel;
+            document.getElementById('hl-best-month-amt').innerText = bestMonthAmt.toLocaleString();
+
+            const avgDay = Array.isArray(tsDay) && tsDay.length ? (tsDay.reduce((s, r) => s + Number(r.total||0), 0) / tsDay.length) : 0;
+            document.getElementById('hl-avg-day').innerText = avgDay.toFixed(0).toLocaleString();
+
+            const totalMethods = methods.reduce((s, m) => s + Number(m.total||0), 0);
+            const topMethodIdx = methods.length ? methods.reduce((mi, r, i, a) => (Number(r.total||0) > Number(a[mi].total||0) ? i : mi), 0) : -1;
+            const topMethodName = topMethodIdx >= 0 ? (methods[topMethodIdx].method || '—') : '—';
+            const topMethodShare = topMethodIdx >= 0 && totalMethods > 0 ? Math.round(Number(methods[topMethodIdx].total||0) * 100 / totalMethods) : 0;
+            document.getElementById('hl-top-method').innerText = topMethodName;
+            document.getElementById('hl-top-method-share').innerText = `${topMethodShare}%`;
+
+            const prevTo = new Date(q.from);
+            const prevFrom = new Date(prevTo.getTime() - rangeDays*24*60*60*1000);
+            const prevRes = await fetch(`${API_URL}/payments/summary?${qs({ from:prevFrom.toISOString(), to:prevTo.toISOString(), currency:cur })}`, { headers: { Authorization: localStorage.getItem('vb_token') ? `Bearer ${localStorage.getItem('vb_token')}` : '' } });
+            const prevSum = prevRes.ok ? await prevRes.json() : {};
+            const curGross = Number(sum.gross||0);
+            const prevGross = Number(prevSum.gross||0);
+            const growthPct = prevGross > 0 ? Math.round((curGross - prevGross) * 100 / prevGross) : 0;
+            document.getElementById('hl-growth').innerText = `${growthPct >= 0 ? '+' : ''}${growthPct}% vs prev`;
+
+            const narrative = `${rangeDays} days revenue ${curGross.toLocaleString()}, best day ${bestDayLabel} (${bestDayAmt.toLocaleString()}), best month ${bestMonthLabel} (${bestMonthAmt.toLocaleString()}), average per day ${avgDay.toFixed(0).toLocaleString()}, top method ${topMethodName} (${topMethodShare}%).`;
+            document.getElementById('narrative').innerText = narrative;
+        }
+
+        function renderTrend(labels, data) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+            const overlay = smoothOn ? movingAverage(data) : null;
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets: [
+                    { label:'Revenue', data, borderColor:'#7a2747', backgroundColor:'rgba(122,39,71,.1)', tension:.25, fill:true },
+                    ...(overlay ? [{ label:'Smooth', data: overlay, borderColor:'#7a8a41', backgroundColor:'rgba(122,138,65,.08)', tension:.25, fill:false }] : [])
+                ] },
+                options: { responsive:true, maintainAspectRatio:false, scales:{ x:{ grid:{ display:false } }, y:{ beginAtZero:true, min:0, grid:{ color:'#eef2f7' } } }, plugins:{ legend:{ display:false } } }
+            });
+        }
+        function movingAverage(arr) {
+            const win = granularityWindow();
+            const out = [];
+            for (let i=0;i<arr.length;i++) {
+                const s = Math.max(0, i-win+1);
+                const slice = arr.slice(s, i+1);
+                const avg = slice.length ? slice.reduce((a,b)=>a+Number(b||0),0)/slice.length : 0;
+                out.push(Number(avg.toFixed(2)));
+            }
+            return out;
+        }
+        function granularityWindow() {
+            const g = document.getElementById('granSel').value;
+            if (g==='day') return 7; if (g==='week') return 4; return 3;
+        }
+
+        function renderProgress(labels, data) {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            if (progressChart) progressChart.destroy();
+            progressChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets: [{ label:'Cumulative', data, borderColor:'#7a8a41', backgroundColor:'rgba(122,138,65,.1)', tension:.25, fill:true }] },
+                options: { responsive:true, maintainAspectRatio:false, scales:{ x:{ grid:{ display:false } }, y:{ beginAtZero:true, min:0, grid:{ color:'#eef2f7' } } }, plugins:{ legend:{ display:false } } }
+            });
+        }
+
+        function renderMethods(labels, data) {
+            const ctx = document.getElementById('methodChart').getContext('2d');
+            if (methodChart) methodChart.destroy();
+            methodChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label:'Total', data, backgroundColor:'#7a8a41' }] },
+                options: { responsive:true, maintainAspectRatio:false, scales:{ x:{ grid:{ display:false } }, y:{ grid:{ color:'#eef2f7' } } }, plugins:{ legend:{ display:false } } }
+            });
+        }
+
+        function renderTopClients(items) {
+            const container = document.getElementById('topClients');
+            const arr = Array.isArray(items) ? items : [];
+            container.innerHTML = arr.map(r => `
+                <div class="p-4 rounded-xl border border-slate-100 bg-white shadow-sm flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center"><i data-lucide="user" class="w-4 h-4"></i></div>
+                        <div><p class="font-bold text-slate-900 text-sm uppercase">${r.name}</p><p class="text-[10px] text-slate-400 font-bold uppercase">Client</p></div>
+                    </div>
+                    <div class="text-right"><p class="font-bold text-slate-900 text-sm">${Number(r.total||0).toLocaleString()}</p></div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>

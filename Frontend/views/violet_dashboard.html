@@ -85,6 +85,7 @@
                 <div class="w-1.5 h-1.5 rounded-full bg-olive animate-pulse"></div>
                 <span>System Operational</span>
             </div>
+            <a href="/insights" class="px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-bold uppercase hover:bg-slate-100">Finance Insights</a>
             <button onclick="logout()" class="p-2 text-slate-400 hover:text-maroon transition-colors bg-slate-50 rounded-lg">
                 <i data-lucide="log-out" class="w-5 h-5"></i>
             </button>
@@ -182,10 +183,13 @@
                     <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="font-bold text-slate-900 text-lg display-font uppercase">Insights</h3>
-                            <div class="flex gap-1">
-                                    <button id="ins-cat-patients" onclick="setInsightsCategory('patients')" class="p-1.5 rounded bg-slate-900 text-white"><i data-lucide="users" class="w-3 h-3"></i></button>
-                                    <button id="ins-cat-sessions" onclick="setInsightsCategory('sessions')" class="p-1.5 rounded bg-slate-100 text-slate-400"><i data-lucide="bar-chart-2" class="w-3 h-3"></i></button>
-                                    <button id="ins-cat-finance" onclick="setInsightsCategory('finance')" class="p-1.5 rounded bg-slate-100 text-slate-400"><i data-lucide="dollar-sign" class="w-3 h-3"></i></button>
+                            <div class="flex items-center gap-2">
+                                    <div class="flex gap-1">
+                                        <button id="ins-cat-patients" onclick="setInsightsCategory('patients')" class="p-1.5 rounded bg-slate-900 text-white"><i data-lucide="users" class="w-3 h-3"></i></button>
+                                        <button id="ins-cat-sessions" onclick="setInsightsCategory('sessions')" class="p-1.5 rounded bg-slate-100 text-slate-400"><i data-lucide="bar-chart-2" class="w-3 h-3"></i></button>
+                                        <button id="ins-cat-finance" onclick="setInsightsCategory('finance')" class="p-1.5 rounded bg-slate-100 text-slate-400"><i data-lucide="dollar-sign" class="w-3 h-3"></i></button>
+                                    </div>
+                                    <a href="/insights" class="px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[10px] font-bold uppercase hover:bg-slate-100">Open Full Page</a>
                             </div>
                         </div>
                         <div id="insights-cards" class="grid grid-cols-2 gap-3"></div>
